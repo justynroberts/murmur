@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#3B2E8F"/>
+      <stop offset="55%"  stop-color="#8A3F9B"/>
+      <stop offset="100%" stop-color="#E8615F"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="45%"  stop-color="#ffffff" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.14"/>
+    </linearGradient>
+    <filter id="soft" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+  </defs>
+
+  <!-- squircle ground -->
+  <rect x="64" y="64" width="896" height="896" rx="208" fill="url(#ground)"/>
+  <rect x="64" y="64" width="896" height="896" rx="208" fill="url(#sheen)"/>
+
+  <!-- soft shadow beneath the waveform, so bars lift off the ground -->
+  <g filter="url(#soft)" opacity="0.30">
+    <rect x="212" y="440" width="88" height="176" rx="44" fill="#1B0F3A"/>
+    <rect x="332" y="352" width="88" height="352" rx="44" fill="#1B0F3A"/>
+    <rect x="452" y="272" width="88" height="512" rx="44" fill="#1B0F3A"/>
+    <rect x="572" y="376" width="88" height="304" rx="44" fill="#1B0F3A"/>
+    <rect x="692" y="464" width="88" height="128" rx="44" fill="#1B0F3A"/>
+  </g>
+
+  <!-- the waveform: asymmetric, so it reads as speech rather than a level meter -->
+  <g fill="#FFFFFF">
+    <rect x="204" y="432" width="88" height="176" rx="44" opacity="0.82"/>
+    <rect x="324" y="344" width="88" height="352" rx="44" opacity="0.92"/>
+    <rect x="444" y="264" width="88" height="512" rx="44"/>
+    <rect x="564" y="368" width="88" height="304" rx="44" opacity="0.92"/>
+    <rect x="684" y="456" width="88" height="128" rx="44" opacity="0.82"/>
+  </g>
+</svg>
