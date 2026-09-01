@@ -34,7 +34,7 @@ heights are deliberately asymmetric (176 / 352 / 512 / 304 / 128) so it reads as
 speech rather than as a symmetrical level meter, which is the shape every other
 audio app uses. Verified legible at 16px.
 
-## Still to build
+## Built
 
 The menu bar popover. When it is written it must carry the full five: light and
 dark themes with a real toggle, animated transitions, Bricolage, and a

@@ -12,6 +12,7 @@ let package = Package(
             name: "Murmur",
             dependencies: [.product(name: "FluidAudio", package: "FluidAudio")],
             path: "Sources/Murmur",
+            resources: [.process("Resources")],
             swiftSettings: [.swiftLanguageMode(.v5)]
         )
     ]

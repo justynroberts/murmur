@@ -1,27 +1,37 @@
 import AppKit
 import AVFoundation
 import Foundation
+import SwiftUI
 
-/// `murmur selftest <file.wav>` exercises the whole pipeline without a keypress,
-/// which is how the transcribe path gets verified in CI and during development.
+/// `murmur selftest <file.wav> [--offline]` exercises the whole pipeline without a
+/// keypress, which is how the transcribe path gets verified during development.
+if CommandLine.arguments.count > 2, CommandLine.arguments[1] == "render-ui" {
+    MainActor.assumeIsolated { RenderPreview.run(outputDirectory: CommandLine.arguments[2]) }
+    exit(0)
+}
+
 if CommandLine.arguments.count > 2, CommandLine.arguments[1] == "selftest" {
-    let path = CommandLine.arguments[2]
-    let semaphore = DispatchSemaphore(value: 0)
+    runSelftest(path: CommandLine.arguments[2],
+                offline: CommandLine.arguments.contains("--offline"))
+    exit(0)
+}
 
+func runSelftest(path: String, offline: Bool) {
+    let semaphore = DispatchSemaphore(value: 0)
     Task {
         defer { semaphore.signal() }
         do {
             let samples = try loadSamples(at: path)
             let spoken = Double(samples.count) / 16_000.0
 
-            // `--offline` refuses the network outright, proving the app works from
-            // cache alone. Any attempt to fetch throws DownloadError.networkDisabled.
-            let offline = CommandLine.arguments.contains("--offline")
+            if offline { print("network: DISABLED for this run") }
 
             let transcriber = Transcriber()
             let loadStart = CFAbsoluteTimeGetCurrent()
-            try await transcriber.load(allowingDownload: !offline)
-            if offline { print("network: DISABLED for this run") }
+            try await transcriber.load(allowingDownload: !offline) { detail, fraction in
+                let pct = fraction.map { String(format: " %.0f%%", $0 * 100) } ?? ""
+                print("  \(detail)\(pct)")
+            }
             print(String(format: "model load: %.2fs", CFAbsoluteTimeGetCurrent() - loadStart))
 
             let (raw, elapsed) = try await transcriber.transcribe(samples)
@@ -34,9 +44,7 @@ if CommandLine.arguments.count > 2, CommandLine.arguments[1] == "selftest" {
             exit(1)
         }
     }
-
     semaphore.wait()
-    exit(0)
 }
 
 /// Reads any audio file and resamples it to the 16 kHz mono the models expect.
@@ -54,7 +62,8 @@ func loadSamples(at path: String) throws -> [Float] {
     guard let converter = AVAudioConverter(from: file.processingFormat, to: target) else {
         throw MurmurError.noInputDevice
     }
-    let capacity = AVAudioFrameCount(Double(file.length) * target.sampleRate / file.processingFormat.sampleRate) + 1024
+    let capacity = AVAudioFrameCount(
+        Double(file.length) * target.sampleRate / file.processingFormat.sampleRate) + 1024
     guard let output = AVAudioPCMBuffer(pcmFormat: target, frameCapacity: capacity) else {
         throw MurmurError.noInputDevice
     }
@@ -73,11 +82,40 @@ func loadSamples(at path: String) throws -> [Float] {
     return Array(UnsafeBufferPointer(start: channel, count: Int(output.frameLength)))
 }
 
-// Menu-bar style agent: no Dock icon, no main window yet.
+@MainActor
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    private var menuBar: MenuBarController?
+    private var dictation: DictationController?
+    private let state = AppState()
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        Fonts.register()
+
+        let menuBar = MenuBarController(state: state)
+        self.menuBar = menuBar
+
+        let dictation = DictationController(state: state)
+        self.dictation = dictation
+
+        // Show the panel on first run so the one-off setup is visible rather than
+        // looking like a hang behind a silent menu bar icon.
+        if !UserDefaults.standard.bool(forKey: "hasLaunchedBefore") {
+            UserDefaults.standard.set(true, forKey: "hasLaunchedBefore")
+            // The status item has no window until the run loop turns, and a
+            // popover anchored to a windowless button never appears.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                menuBar.presentOnce()
+            }
+        }
+
+        Task { await dictation.boot() }
+    }
+}
+
 let app = NSApplication.shared
+// Top-level code is not actor-isolated under language mode 5, but it does run on
+// the main thread, so asserting that is accurate rather than a workaround.
+let delegate = MainActor.assumeIsolated { AppDelegate() }
+app.delegate = delegate
 app.setActivationPolicy(.accessory)
-
-let controller = DictationController()
-Task { await controller.boot() }
-
 app.run()

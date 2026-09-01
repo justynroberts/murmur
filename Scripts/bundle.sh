@@ -10,7 +10,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CONFIG="${1:-debug}"
 APP="$ROOT/Murmur.app"
 BIN="$ROOT/.build/$CONFIG/Murmur"
-VERSION="0.1.0"
+VERSION="0.2.0"
 
 [ -x "$BIN" ] || { echo "Build first: swift build -c $CONFIG"; exit 1; }
 
@@ -18,6 +18,14 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Murmur"
 cp "$ROOT/Assets/Murmur.icns" "$APP/Contents/Resources/Murmur.icns"
+
+# SwiftPM emits resources as sibling .bundle directories. They must travel into
+# Contents/Resources or Bundle.module finds nothing at runtime — which shows up
+# as the UI silently falling back to the system font.
+for b in "$ROOT/.build/$CONFIG"/*.bundle; do
+    [ -e "$b" ] || continue
+    cp -R "$b" "$APP/Contents/Resources/"
+done
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

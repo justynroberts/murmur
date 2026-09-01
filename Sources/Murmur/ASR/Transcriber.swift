@@ -9,10 +9,29 @@ actor Transcriber {
 
     /// Loads models, downloading them once if they are not already cached.
     /// After loading, the network door is bolted shut for the rest of the process.
-    func load(allowingDownload: Bool) async throws {
+    ///
+    /// - Parameter onProgress: called with a human-readable phase and, where known,
+    ///   a 0…1 fraction. The compile step is the slow one on a cold process.
+    func load(
+        allowingDownload: Bool,
+        onProgress: @escaping @Sendable (String, Double?) -> Void
+    ) async throws {
         ModelHub.offlineMode = !allowingDownload
 
-        let models = try await AsrModels.downloadAndLoad(version: .v2)  // v2 = English-only, fastest
+        let models = try await AsrModels.downloadAndLoad(version: .v2) { progress in
+            let detail: String
+            switch progress.phase {
+            case .downloading(let done, let total):
+                detail = "Downloading speech model — \(done) of \(total) files"
+            case .compiling(let name):
+                detail = "Compiling \(name) for the Neural Engine"
+            @unknown default:
+                detail = "Preparing"
+            }
+            onProgress(detail, progress.fractionCompleted > 0 ? progress.fractionCompleted : nil)
+        }
+
+        onProgress("Warming up", 0.95)
         let manager = AsrManager(config: .default)
         try await manager.loadModels(models)
 
@@ -22,7 +41,7 @@ actor Transcriber {
     }
 
     /// Hard offline guarantee: any later attempt to reach the network throws
-    /// `DownloadError.networkDisabled` rather than quietly succeeding.
+    /// `DownloadError.networkDisabled` rather than silently succeeding.
     nonisolated func lockOffline() {
         ModelHub.offlineMode = true
     }
@@ -31,7 +50,7 @@ actor Transcriber {
         guard let manager else { throw MurmurError.modelsNotLoaded }
 
         // A fresh decoder state per utterance. TdtDecoderState carries LSTM context
-        // across chunks for streaming; reusing it here would let the previous
+        // across chunks for streaming; reusing it would let the previous
         // dictation bleed into the next one.
         var decoderState = try TdtDecoderState()
 
