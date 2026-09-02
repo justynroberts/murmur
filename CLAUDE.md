@@ -41,6 +41,21 @@ Two tiers, both fully local:
 2. **Polish key (~2.9s)** — Qwen3-4B rewrites the last dictation on explicit request.
    Latency is acceptable precisely because the user asked for it. *(not yet built)*
 
+## Filler stripping
+
+`RuleCleaner` matches vocal noises as regex patterns, not a word list, so elongations
+("uhhhh", "errrr", "aaaah") are caught without enumerating spellings. Two rules govern
+what may be added:
+
+1. **Only sounds that are never words.** "so", "well", "like", "right" and "oh" are
+   deliberately absent — they carry meaning often enough that stripping them changes
+   what the speaker said. Note "ooh" is matched as `o{2,}h*`, which leaves "oh" alone.
+2. **A capitalised token mid-sentence is a proper noun and is kept.** "Ah" and "Er" are
+   names. At a sentence start the capital carries no signal, so filler still goes.
+
+`swift run Murmur cleantest` covers both directions. The negative cases matter more than
+the positive ones: the risk is not missing an "um", it is eating a real word.
+
 ## Things that will bite you
 
 - **Text injection** uses pasteboard + synthesised Cmd-V, not per-character synthesis.
@@ -59,6 +74,7 @@ Two tiers, both fully local:
 
 ```bash
 swift build                          # compile
+swift run Murmur cleantest           # RuleCleaner assertions (run after touching it)
 ./Scripts/bundle.sh                  # wrap in Murmur.app (do this after every build)
 open Murmur.app                      # run
 swift run Murmur selftest audio.wav  # exercise the ASR path with no keypress

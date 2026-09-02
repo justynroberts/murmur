@@ -10,6 +10,10 @@ if CommandLine.arguments.count > 2, CommandLine.arguments[1] == "render-ui" {
     exit(0)
 }
 
+if CommandLine.arguments.count > 1, CommandLine.arguments[1] == "cleantest" {
+    exit(CleanerTest.run())
+}
+
 if CommandLine.arguments.count > 2, CommandLine.arguments[1] == "selftest" {
     runSelftest(path: CommandLine.arguments[2],
                 offline: CommandLine.arguments.contains("--offline"))
