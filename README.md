@@ -73,6 +73,22 @@ Refuses the network for the whole run and still transcribes.
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | Permissions, Secure Input, Electron limitations |
 | [Design](DESIGN.md) | Visual language for the forthcoming UI |
 
+## Word list
+
+Terms the model gets wrong — product names it splits, names spelled the common way —
+are fixed by a substitution list at
+`~/Library/Application Support/Murmur/dictionary.json`:
+
+```json
+{
+  "pager duty": "PagerDuty",
+  "justin": "Justyn"
+}
+```
+
+Open it from the book icon in the panel. Changes apply on the next dictation, no
+restart needed.
+
 ## Status
 
 Early. The core loop works end to end. Still to come: the menu bar interface, and

@@ -56,6 +56,25 @@ what may be added:
 `swift run Murmur cleantest` covers both directions. The negative cases matter more than
 the positive ones: the risk is not missing an "um", it is eating a real word.
 
+## Word list
+
+`UserDictionary` applies literal term substitutions from
+`~/Library/Application Support/Murmur/dictionary.json`, seeded on launch and re-read
+whenever its mtime changes — editing it needs no restart.
+
+It exists because two classes of error are unfixable at the model level: terms the
+model splits or cases wrongly ("pager duty" -> "PagerDuty"), and names that are
+homophones of a commoner spelling ("Justin" -> "Justyn"). Parakeet will never emit the
+rarer spelling on its own.
+
+- Applied **after** `capitaliseSentences`, so the user's spelling wins. Run it earlier
+  and sentence-start capitalisation turns "npm" into "Npm".
+- One combined regex, matched back-to-front, so a substitution can never be re-matched
+  by another rule in the same pass.
+- Alternatives are sorted longest-first, or "pager duty pro" loses to "pager duty".
+- Boundaries are lookarounds, not `\b`, which misbehaves on terms like "c++".
+- A malformed JSON file is ignored rather than fatal — dictation keeps working.
+
 ## Things that will bite you
 
 - **Text injection** uses pasteboard + synthesised Cmd-V, not per-character synthesis.

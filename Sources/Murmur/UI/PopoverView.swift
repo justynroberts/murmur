@@ -63,6 +63,9 @@ struct PopoverView: View {
 
             Spacer()
 
+            iconButton("character.book.closed", label: "Edit word list") {
+                openDictionary()
+            }
             iconButton(state.theme.symbol, label: "Switch theme") {
                 let all = ThemeChoice.allCases
                 let idx = all.firstIndex(of: state.theme) ?? 0
@@ -292,6 +295,16 @@ struct PopoverView: View {
             .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Tokens.border(scheme)))
     }
 
+    /// Opens the substitution list in whatever the user edits JSON with.
+    /// Touching the file is enough — it is re-read on the next dictation.
+    private func openDictionary() {
+        let url = UserDictionary.defaultFileURL
+        _ = UserDictionary.shared.count          // ensures the seed file exists
+        if !NSWorkspace.shared.open(url) {
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+        }
+    }
+
     private func iconButton(_ symbol: String, label: String,
                             action: @escaping () -> Void) -> some View {
         Button(action: action) {
@@ -311,6 +324,8 @@ struct PopoverView: View {
 
 extension Bundle {
     var appVersion: String {
-        (infoDictionary?["CFBundleShortVersionString"] as? String) ?? "0.1.0"
+        // Only reached when running the bare binary (render-ui), which has no
+        // Info.plist. A placeholder is clearer here than a version that will rot.
+        (infoDictionary?["CFBundleShortVersionString"] as? String) ?? "dev"
     }
 }

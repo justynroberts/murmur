@@ -46,7 +46,7 @@ enum RuleCleaner {
         return fillerPattern.firstMatch(in: bare, options: [], range: range) != nil
     }
 
-    static func clean(_ raw: String) -> String {
+    static func clean(_ raw: String, dictionary: UserDictionary? = .shared) -> String {
         var text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return text }
 
@@ -60,6 +60,13 @@ enum RuleCleaner {
 
         text = tidyPunctuation(text)
         text = capitaliseSentences(text)
+
+        // Deliberately after capitalisation: the user's spelling is the final word.
+        // Running it earlier would let sentence-start capitalisation turn "npm"
+        // into "Npm" and "iPhone" into "IPhone".
+        if let dictionary {
+            text = dictionary.apply(to: text)
+        }
 
         if let last = text.last, !".!?".contains(last) {
             text.append(".")

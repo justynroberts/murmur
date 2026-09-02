@@ -46,10 +46,34 @@ enum CleanerTest {
         ("what about tuesday?", "What about tuesday?", "keeps question mark"),
     ]
 
+    /// Substitution cases run against a fixed dictionary, never the user's own.
+    private static let dictionaryCases: [(input: String, expected: String, note: String)] = [
+        ("can you check pager duty", "Can you check PagerDuty.", "two words joined and cased"),
+        ("Pager Duty is down", "PagerDuty is down.", "matches regardless of case"),
+        ("ask justin about it", "Ask Justyn about it.", "homophone name"),
+        ("um justin owns pager duty", "Justyn owns PagerDuty.", "filler and two terms together"),
+        ("run npm install", "Run npm install.", "lowercase term stays lowercase"),
+        ("npm is the tool", "npm is the tool.", "not capitalised at sentence start"),
+        ("the pagerduty runbook", "The PagerDuty runbook.", "single-word variant"),
+        ("justins laptop", "Justins laptop.", "no match inside a longer word"),
+        ("injustice is unrelated", "Injustice is unrelated.", "no match mid-word"),
+        ("pager duty pro is better", "PagerDuty Pro is better.", "longest term wins"),
+        ("we use c++ here", "We use C++ here.", "term with punctuation"),
+    ]
+
+    private static let testDictionary = UserDictionary(entries: [
+        "pager duty": "PagerDuty",
+        "pagerduty": "PagerDuty",
+        "pager duty pro": "PagerDuty Pro",
+        "justin": "Justyn",
+        "npm": "npm",
+        "c++": "C++",
+    ])
+
     static func run() -> Int32 {
         var failures = 0
         for testCase in cases {
-            let actual = RuleCleaner.clean(testCase.input)
+            let actual = RuleCleaner.clean(testCase.input, dictionary: nil)
             let ok = actual == testCase.expected
             if !ok { failures += 1 }
             let mark = ok ? "PASS" : "FAIL"
@@ -60,7 +84,20 @@ enum CleanerTest {
                 print("      actual:   \"\(actual)\"")
             }
         }
-        print("\n\(cases.count - failures)/\(cases.count) passed")
+        for testCase in dictionaryCases {
+            let actual = RuleCleaner.clean(testCase.input, dictionary: testDictionary)
+            let ok = actual == testCase.expected
+            if !ok { failures += 1 }
+            print("\(ok ? "PASS" : "FAIL")  dict: \(testCase.note)")
+            if !ok {
+                print("      in:       \"\(testCase.input)\"")
+                print("      expected: \"\(testCase.expected)\"")
+                print("      actual:   \"\(actual)\"")
+            }
+        }
+
+        let total = cases.count + dictionaryCases.count
+        print("\n\(total - failures)/\(total) passed")
         return failures == 0 ? 0 : 1
     }
 }

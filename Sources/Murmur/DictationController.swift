@@ -28,6 +28,10 @@ final class DictationController {
     }
 
     func boot() async {
+        // Create the word list on launch so it is there to be found and edited,
+        // rather than appearing only after the first dictation.
+        _ = UserDictionary.shared.count
+
         guard requestAccessibility() else {
             state.phase = .failed("Grant Accessibility in System Settings, then relaunch.")
             return
