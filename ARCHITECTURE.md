@@ -1,6 +1,7 @@
-# CLAUDE.md
+# Architecture
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+How Murmur fits together, why each piece is the way it is, and what will bite
+you. Read this before changing anything.
 
 ## What this is
 
@@ -94,6 +95,24 @@ Things in the controller that look like bugs but are deliberate:
   carries LSTM context across streaming chunks; reusing it would bleed one dictation
   into the next. Do not "optimise" this away.
 - A cleaned result of `""` or `"."` is discarded without injecting.
+
+### Why each piece is the way it is
+
+- **Parakeet, not Whisper.** Benchmarked on the target machine before committing.
+  Parakeet TDT v2 via CoreML is both faster and more accurate than whisper small.en,
+  and whisper large-v3-turbo is four times too slow to be usable. Whisper is not kept
+  as a fallback because there is no case where it wins.
+- **FluidAudio, not a Python sidecar.** The obvious route to Parakeet is
+  `parakeet-mlx`, which would mean shipping a Python runtime and MLX inside the app
+  bundle. FluidAudio runs the same model through CoreML in pure Swift, so Murmur is
+  an ordinary 16MB Swift binary. It also turned out to be roughly twice as fast.
+- **Pasteboard injection, not keystroke synthesis.** Synthesising each character is
+  slow and several apps drop the events entirely. Writing to the pasteboard and
+  sending one Cmd-V is universal; the clipboard round trip is 0.73ms.
+- **Rule-based cleanup, not an LLM.** `RuleCleaner` only removes what it can prove
+  is noise, then repairs the punctuation the removals stranded. It is lossless by
+  construction. An LLM pass belongs behind an explicit keystroke, where the user
+  has accepted the latency.
 
 ### Threading
 
@@ -201,10 +220,9 @@ design tokens in `Theme.swift`; keep the two in step.
 
 ## Docs
 
-`docs/ARCHITECTURE.md` (why each piece is the way it is), `docs/BENCHMARKS.md` (every
-measurement), `docs/TROUBLESHOOTING.md` (permissions, Secure Input, Electron),
-`docs/RELEASING.md` (the publish path), `DESIGN.md` (visual language). Update them
-alongside the code they describe.
+`docs/BENCHMARKS.md` (every measurement), `docs/TROUBLESHOOTING.md` (permissions,
+Secure Input, Electron), `docs/RELEASING.md` (the publish path), `DESIGN.md` (visual
+language). Update them alongside the code they describe.
 
 ## Stack
 

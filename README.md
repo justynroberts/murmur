@@ -72,7 +72,7 @@ Refuses the network for the whole run and still transcribes.
 
 | | |
 |---|---|
-| [Architecture](docs/ARCHITECTURE.md) | How the loop fits together, and why each piece is the way it is |
+| [Architecture](ARCHITECTURE.md) | How the loop fits together, why each piece is the way it is, and what will bite you |
 | [Benchmarks](docs/BENCHMARKS.md) | Every measurement behind the design decisions |
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | Permissions, Secure Input, Electron limitations |
 | [Design](DESIGN.md) | Visual language for the menu bar interface |
