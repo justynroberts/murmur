@@ -24,8 +24,12 @@ starts.
 
 Requires macOS 14+ on Apple Silicon.
 
+Download the latest disk image from
+[Releases](https://github.com/justynroberts/murmur/releases/latest) and drag
+Murmur into Applications. Or build it yourself:
+
 ```bash
-git clone <this repo> && cd murmur
+git clone https://github.com/justynroberts/murmur.git && cd murmur
 swift build -c release
 ./Scripts/bundle.sh release
 open Murmur.app
@@ -71,7 +75,8 @@ Refuses the network for the whole run and still transcribes.
 | [Architecture](docs/ARCHITECTURE.md) | How the loop fits together, and why each piece is the way it is |
 | [Benchmarks](docs/BENCHMARKS.md) | Every measurement behind the design decisions |
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | Permissions, Secure Input, Electron limitations |
-| [Design](DESIGN.md) | Visual language for the forthcoming UI |
+| [Design](DESIGN.md) | Visual language for the menu bar interface |
+| [Releasing](docs/RELEASING.md) | Signing, notarisation, and the one command that publishes |
 
 ## Word list
 
@@ -91,8 +96,8 @@ restart needed.
 
 ## Status
 
-Early. The core loop works end to end. Still to come: the menu bar interface, and
-an opt-in "polish" key that runs a local LLM over the last dictation.
+The core loop, menu bar interface and word list are done. Still to come: an
+opt-in "polish" key that runs a local LLM over the last dictation.
 
 ## Licence
 
