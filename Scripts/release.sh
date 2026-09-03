@@ -87,7 +87,8 @@ grep -q "^VERSION=\"$VERSION\"" Scripts/bundle.sh || die "could not set VERSION 
 # download works with no JavaScript; keep it pointing at this release.
 sed -i '' -E \
   -e "s|releases/download/v[0-9.]+/Murmur-[0-9.]+\.dmg|releases/download/v$VERSION/Murmur-$VERSION.dmg|g" \
-  -e "s|(id=\"dl-version\">)[0-9.]+|\1$VERSION|" site/index.html
+  -e "s|releases/tag/v[0-9.]+|releases/tag/v$VERSION|g" \
+  -e "s|(dl-ver(sion)?\">)[0-9.]+|\1$VERSION|g" site/index.html
 grep -q "Murmur-$VERSION.dmg" site/index.html || die "could not set the download link in site/index.html"
 
 step "Building and signing"

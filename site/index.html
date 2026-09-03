@@ -190,6 +190,18 @@ h1 {
   border-radius: var(--r-s); padding: 1px 6px; color: var(--text);
 }
 .steps em { font-style: normal; color: var(--text); }
+.links { list-style: none; margin: 0; padding: 0; }
+.links li {
+  display: grid; grid-template-columns: minmax(200px, 1fr) 2fr; gap: 6px 24px; align-items: baseline;
+  padding: 12px 0; border-bottom: 1px solid var(--border-subtle);
+}
+.links li:first-child { padding-top: 0; }
+.links li:last-child { border-bottom: 0; padding-bottom: 0; }
+.links a { font-family: var(--mono); font-size: .9rem; color: var(--accent); text-decoration: none; word-break: break-all; }
+.links a:hover { text-decoration: underline; }
+.links span { color: var(--text-3); font-size: .9rem; }
+@media (max-width: 560px) { .links li { grid-template-columns: 1fr; gap: 2px; } }
+
 .source { margin-top: 22px; border-top: 1px solid var(--border-subtle); padding-top: 16px; }
 .source summary {
   cursor: pointer; color: var(--text-3); font-size: .88rem; list-style: none;
@@ -466,6 +478,30 @@ footer a:hover { text-decoration: underline; }
     </p>
   </section>
 
+  <section class="rise" id="downloads">
+    <h2>Downloads</h2>
+    <div class="panel">
+      <ul class="links">
+        <li>
+          <a class="dl-dmg" href="https://github.com/justynroberts/murmur/releases/download/v0.3.0/Murmur-0.3.0.dmg">Murmur-<span class="dl-ver">0.3.0</span>.dmg</a>
+          <span>The disk image for this release. Signed and notarised.</span>
+        </li>
+        <li>
+          <a class="dl-tag" href="https://github.com/justynroberts/murmur/releases/tag/v0.3.0">Release notes for <span class="dl-ver">0.3.0</span></a>
+          <span>What changed in this version.</span>
+        </li>
+        <li>
+          <a href="https://github.com/justynroberts/murmur/releases/latest">Latest release</a>
+          <span>Always the newest version, whatever it is.</span>
+        </li>
+        <li>
+          <a href="https://github.com/justynroberts/murmur/releases">All releases</a>
+          <span>Every version, with its notes.</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
   <section class="rise" id="install">
     <h2>Install</h2>
     <div class="panel">
@@ -537,10 +573,12 @@ footer a:hover { text-decoration: underline; }
       if (!rel || !rel.assets) return;
       var dmg = rel.assets.filter(function (a) { return /\.dmg$/.test(a.name); })[0];
       if (!dmg) return;
-      document.getElementById('dl').href = dmg.browser_download_url;
-      document.getElementById('dl-version').textContent = String(rel.tag_name || '').replace(/^v/, '');
+      var version = String(rel.tag_name || '').replace(/^v/, '');
+      var set = function (sel, fn) { [].forEach.call(document.querySelectorAll(sel), fn); };
+      set('#dl, .dl-dmg', function (a) { a.href = dmg.browser_download_url; });
+      set('#dl-notes, .dl-tag', function (a) { a.href = rel.html_url; });
+      set('#dl-version, .dl-ver', function (el) { el.textContent = version; });
       document.getElementById('dl-size').textContent = Math.round(dmg.size / 1048576) + ' MB';
-      document.getElementById('dl-notes').href = rel.html_url;
     })
     .catch(function () {});
 
