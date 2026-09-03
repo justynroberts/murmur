@@ -218,6 +218,11 @@ Never cut a release unless asked in that message. See `docs/RELEASING.md`.
 `.github/workflows/pages.yml` on any push to `main` that touches `site/**`. It shares the
 design tokens in `Theme.swift`; keep the two in step.
 
+The download button is baked with a direct link to the current disk image so it works
+with no JavaScript, then upgraded client-side from the GitHub releases API. `release.sh`
+rewrites the baked link and version on every release, so the page and the release
+never drift; do not hand-edit the version there.
+
 ## Docs
 
 `docs/BENCHMARKS.md` (every measurement), `docs/TROUBLESHOOTING.md` (permissions,

@@ -177,6 +177,29 @@ h1 {
 }
 
 .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.req a { color: var(--accent); text-decoration: none; }
+.req a:hover { text-decoration: underline; }
+
+.steps { margin: 0; padding: 0 0 0 1.6em; color: var(--text-2); }
+.steps li { margin: 0 0 14px; padding-left: 6px; line-height: 1.6; }
+.steps li::marker { font-family: var(--mono); color: var(--accent); font-weight: 500; }
+.steps li:last-child { margin-bottom: 0; }
+.steps kbd {
+  font-family: var(--mono); font-size: .85em;
+  background: var(--bg-raised); border: 1px solid var(--border); border-bottom-width: 2px;
+  border-radius: var(--r-s); padding: 1px 6px; color: var(--text);
+}
+.steps em { font-style: normal; color: var(--text); }
+.source { margin-top: 22px; border-top: 1px solid var(--border-subtle); padding-top: 16px; }
+.source summary {
+  cursor: pointer; color: var(--text-3); font-size: .88rem; list-style: none;
+  transition: color var(--dur-fast) var(--ease);
+}
+.source summary::-webkit-details-marker { display: none; }
+.source summary::before { content: '›'; display: inline-block; margin-right: 8px; transition: transform var(--dur-fast) var(--ease); }
+.source[open] summary::before { transform: rotate(90deg); }
+.source summary:hover { color: var(--text); }
+.source pre { margin-top: 14px; }
 
 .btn {
   display: inline-flex; align-items: center; gap: 9px;
@@ -361,10 +384,14 @@ footer a:hover { text-decoration: underline; }
       Hold <kbd>⌥</kbd>, speak, release. Cleaned-up text lands in whatever app you were typing in.
     </p>
     <div class="cta rise">
-      <a class="btn btn-primary" href="https://github.com/justynroberts/murmur/releases/latest">Download for macOS</a>
-      <a class="btn btn-ghost" href="https://github.com/justynroberts/murmur">View source</a>
+      <a id="dl" class="btn btn-primary" href="https://github.com/justynroberts/murmur/releases/download/v0.3.0/Murmur-0.3.0.dmg">Download Murmur <span id="dl-version">0.3.0</span></a>
+      <a class="btn btn-ghost" href="#install">How to install</a>
     </div>
-    <p class="req rise">macOS 14+ · Apple Silicon · signed &amp; notarised</p>
+    <p class="req rise">
+      macOS 14+ · Apple Silicon · signed &amp; notarised · <span id="dl-size">10 MB</span> disk image<br>
+      <a id="dl-notes" href="https://github.com/justynroberts/murmur/releases/latest">Release notes</a> ·
+      <a href="https://github.com/justynroberts/murmur">Source on GitHub</a>
+    </p>
   </header>
 
   <div class="stats">
@@ -439,18 +466,36 @@ footer a:hover { text-decoration: underline; }
     </p>
   </section>
 
-  <section class="rise">
+  <section class="rise" id="install">
     <h2>Install</h2>
     <div class="panel">
-      <pre><b>git clone</b> https://github.com/justynroberts/murmur
+      <ol class="steps">
+        <li>
+          <strong>Download the disk image</strong> and drag Murmur into Applications.
+          It is signed and notarised, so it opens without a Gatekeeper warning.
+        </li>
+        <li>
+          <strong>Open Murmur</strong> and grant <em>Accessibility</em> and <em>Microphone</em> when asked.
+          Accessibility is what lets it watch for the key and type into other apps.
+        </li>
+        <li>
+          <strong>Wait for the one-off setup.</strong> The first launch downloads the speech model (~2.3GB)
+          and compiles it for the Neural Engine. The menu bar icon shows progress. After that the
+          network is locked off for good.
+        </li>
+        <li>
+          <strong>Hold <kbd>⌥</kbd> right Option, speak, release.</strong> Text appears wherever the
+          cursor is. Click the menu bar icon to see recent dictations and the word list.
+        </li>
+      </ol>
+      <details class="source">
+        <summary>Build from source instead</summary>
+        <pre><b>git clone</b> https://github.com/justynroberts/murmur
 <b>cd</b> murmur
 <b>swift build</b> -c release
 ./Scripts/bundle.sh release
 <b>open</b> Murmur.app</pre>
-      <p style="margin:16px 0 0">
-        Grant Accessibility and Microphone when asked. The first launch downloads the speech model
-        once (~2.3GB), and after that the network is locked off for good.
-      </p>
+      </details>
     </div>
   </section>
 
@@ -483,6 +528,22 @@ footer a:hover { text-decoration: underline; }
 
 <script>
 (function () {
+  // The download button is baked with the version current at deploy time, so it
+  // works with no JavaScript. This upgrades it to the newest release if there is
+  // one, and fails silently back to the baked link.
+  fetch('https://api.github.com/repos/justynroberts/murmur/releases/latest', { headers: { Accept: 'application/vnd.github+json' } })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (rel) {
+      if (!rel || !rel.assets) return;
+      var dmg = rel.assets.filter(function (a) { return /\.dmg$/.test(a.name); })[0];
+      if (!dmg) return;
+      document.getElementById('dl').href = dmg.browser_download_url;
+      document.getElementById('dl-version').textContent = String(rel.tag_name || '').replace(/^v/, '');
+      document.getElementById('dl-size').textContent = Math.round(dmg.size / 1048576) + ' MB';
+      document.getElementById('dl-notes').href = rel.html_url;
+    })
+    .catch(function () {});
+
   var dlg = document.getElementById('about-dialog');
   document.getElementById('info-btn').addEventListener('click', function () { dlg.showModal(); });
   dlg.querySelector('.about-close').addEventListener('click', function () { dlg.close(); });

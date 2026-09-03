@@ -79,9 +79,16 @@ swift run -c release Murmur cleantest >/dev/null || die "cleantest failed" "a re
 step "Setting the version to $VERSION"
 # A dry run has to leave the tree exactly as it found it. Without this the bump
 # survives, the next dry run sees a dirty tree, and refuses.
-[ "$DRY_RUN" = "1" ] && trap 'git checkout -- Scripts/bundle.sh 2>/dev/null || true' EXIT
+[ "$DRY_RUN" = "1" ] && trap 'git checkout -- Scripts/bundle.sh site/index.html 2>/dev/null || true' EXIT
 sed -i '' -E "s|^VERSION=\"[^\"]*\"|VERSION=\"$VERSION\"|" Scripts/bundle.sh
 grep -q "^VERSION=\"$VERSION\"" Scripts/bundle.sh || die "could not set VERSION in Scripts/bundle.sh"
+
+# The landing page bakes in a direct link to the current disk image so the
+# download works with no JavaScript; keep it pointing at this release.
+sed -i '' -E \
+  -e "s|releases/download/v[0-9.]+/Murmur-[0-9.]+\.dmg|releases/download/v$VERSION/Murmur-$VERSION.dmg|g" \
+  -e "s|(id=\"dl-version\">)[0-9.]+|\1$VERSION|" site/index.html
+grep -q "Murmur-$VERSION.dmg" site/index.html || die "could not set the download link in site/index.html"
 
 step "Building and signing"
 swift build -c release 2>&1 | tail -1
@@ -151,7 +158,7 @@ fi
 
 step "Committing, tagging and publishing"
 if [ -n "$(git status --porcelain)" ]; then
-  git add Scripts/bundle.sh
+  git add Scripts/bundle.sh site/index.html
   git commit -q -m "Release $VERSION"
 fi
 git push -q origin "$BRANCH"
