@@ -1,4 +1,5 @@
 import Foundation
+import ServiceManagement
 import SwiftUI
 
 /// What the app is doing right now. The menu bar icon and the popover both read from this.
@@ -58,11 +59,55 @@ final class AppState: ObservableObject {
     /// The dictation is queued rather than dropped.
     @Published var queuedWhileLoading = false
 
+    /// The modifier held to dictate. `DictationController` pushes changes into
+    /// the live event tap, so switching takes effect immediately.
+    @Published var hotKey: HotKey = .default {
+        didSet { UserDefaults.standard.set(hotKey.rawValue, forKey: "hotKey") }
+    }
+
+    /// Mirrors `SMAppService.mainApp`. Setting it registers or unregisters the
+    /// login item; if macOS refuses, the value is put back and `settingsNote`
+    /// says why, so the switch never lies about what is enabled.
+    @Published var launchAtLogin: Bool = false {
+        didSet {
+            guard !applyingLoginItem, launchAtLogin != oldValue else { return }
+            do {
+                if launchAtLogin { try SMAppService.mainApp.register() }
+                else { try SMAppService.mainApp.unregister() }
+                settingsNote = nil
+            } catch {
+                applyingLoginItem = true
+                launchAtLogin = oldValue
+                applyingLoginItem = false
+                settingsNote = "Could not change the login item: \(error.localizedDescription)"
+            }
+        }
+    }
+    @Published var settingsNote: String?
+    private var applyingLoginItem = false
+
+    /// Sets the switch without touching `SMAppService`. For previews only —
+    /// the bare binary has no bundle to register.
+    func previewLaunchAtLogin(_ on: Bool) {
+        applyingLoginItem = true
+        launchAtLogin = on
+        applyingLoginItem = false
+    }
+
     init() {
         if let raw = UserDefaults.standard.string(forKey: "theme"),
            let stored = ThemeChoice(rawValue: raw) {
             theme = stored
         }
+        if let raw = UserDefaults.standard.string(forKey: "hotKey"),
+           let stored = HotKey(rawValue: raw) {
+            hotKey = stored
+        }
+        // Ask the system rather than trusting a stored flag: the user can remove
+        // the login item in System Settings and the switch must show that.
+        applyingLoginItem = true
+        launchAtLogin = SMAppService.mainApp.status == .enabled
+        applyingLoginItem = false
     }
 
     func record(_ dictation: Dictation) {

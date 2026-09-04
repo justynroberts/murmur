@@ -76,7 +76,7 @@ Two tiers, both fully local:
 `DictationController` owns the whole thing and is the only place the pieces meet:
 
 ```
-HotKeyMonitor (CGEventTap, .flagsChanged, keycode 61)
+HotKeyMonitor (CGEventTap, .flagsChanged, one modifier from `HotKey`)
   → AudioCapture (AVAudioEngine tap → AVAudioConverter → 16kHz mono Float)
   → Transcriber (actor; Parakeet TDT v2 via FluidAudio)
   → RuleCleaner.clean (fillers → capitalise → UserDictionary → terminal punctuation)
@@ -128,7 +128,9 @@ accumulates on the audio thread behind an `NSLock`. Everything UI-facing is `@Ma
 `AppState` is the single source of truth. Its `Phase` enum (`starting`, `settingUp`,
 `ready`, `recording`, `transcribing`, `failed`) drives both the menu bar icon
 (`MenuBarController.render`) and the popover (`PopoverView`). Add state to `Phase`,
-not to views. `recent` keeps the last three dictations.
+not to views. `recent` keeps the last three dictations. Settings (`hotKey`,
+`launchAtLogin`, `theme`) live there too; `DictationController` subscribes to `hotKey`
+and pushes it into the live event tap.
 
 `Theme.swift` holds the design tokens (iris → magenta → coral gradient, per-scheme
 text/surface colours) and `Fonts.register()`, which loads the bundled Bricolage
@@ -194,8 +196,20 @@ rarer spelling on its own.
   confirmed, `kAXErrorNoValue`. Injection works there, but reading surrounding text
   for context does not. Do not build features that assume AX context is available.
 - The event tap gets disabled by the system on timeout; `HotKeyMonitor` re-arms it.
-- `flagsChanged` carries no up/down bit — key state is inferred from whether
-  `.maskAlternate` survived the event.
+- `flagsChanged` carries no up/down bit — key state is inferred from whether the
+  chosen modifier's flag survived the event.
+- **The hotkey is a modifier, chosen from `HotKey`** and persisted in UserDefaults.
+  Fn/Globe is excluded because a bare press fires the system emoji or dictation
+  action on release; Shift because holding it is how capitals happen. The monitor
+  reads `key` on every event and releases a held key when it changes, or a recording
+  started on the old key would never end.
+- **Launch at login is `SMAppService.mainApp`**, and `AppState` asks the system for
+  the real status on launch rather than trusting a stored flag, because the user can
+  remove the item in System Settings. It only works from inside `Murmur.app`; the bare
+  binary reports not registered.
+- **Murmur never checks for updates.** No network request of any kind is allowed, and
+  that includes the releases API. About links to the website and releases page in the
+  browser instead.
 
 ## Signing and release
 

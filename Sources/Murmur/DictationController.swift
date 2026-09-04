@@ -1,5 +1,6 @@
 import AppKit
 import AVFoundation
+import Combine
 import Foundation
 
 /// Wires the push-to-talk loop together: hold key -> record -> transcribe -> clean -> inject.
@@ -14,6 +15,7 @@ final class DictationController {
     private var isRecording = false
     private var pressedAt: CFAbsoluteTime = 0
     private var tick: Timer?
+    private var cancellables = Set<AnyCancellable>()
 
     /// Audio captured before the models finished loading. Held rather than dropped,
     /// so speaking during first-run setup is not silently lost.
@@ -25,6 +27,11 @@ final class DictationController {
 
     init(state: AppState) {
         self.state = state
+        hotKey.key = state.hotKey
+        state.$hotKey
+            .removeDuplicates()
+            .sink { [weak self] in self?.hotKey.key = $0 }
+            .store(in: &cancellables)
     }
 
     func boot() async {

@@ -6,8 +6,16 @@ import Foundation
 /// Requires Accessibility permission — a listen-only tap still counts as one.
 final class HotKeyMonitor {
 
-    /// Right Option (kVK_RightOption). Chosen because almost nothing else claims it.
-    private let watchedKeyCode: Int64 = 61
+    /// Which modifier to watch. Read on every event, so it can change while the
+    /// tap is live. Switching mid-hold releases the old key first, or the
+    /// recording would never end.
+    var key: HotKey = .default {
+        didSet {
+            guard key != oldValue, isDown else { return }
+            isDown = false
+            DispatchQueue.main.async { [weak self] in self?.onRelease() }
+        }
+    }
 
     private var tap: CFMachPort?
     private var source: CFRunLoopSource?
@@ -56,10 +64,10 @@ final class HotKeyMonitor {
     }
 
     fileprivate func handle(_ event: CGEvent) {
-        guard event.getIntegerValueField(.keyboardEventKeycode) == watchedKeyCode else { return }
+        guard event.getIntegerValueField(.keyboardEventKeycode) == key.keyCode else { return }
 
-        // flagsChanged carries no up/down bit — infer it from whether Option survived the event.
-        let down = event.flags.contains(.maskAlternate)
+        // flagsChanged carries no up/down bit — infer it from whether the modifier survived the event.
+        let down = event.flags.contains(key.flag)
         guard down != isDown else { return }
         isDown = down
 

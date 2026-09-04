@@ -26,6 +26,8 @@ enum RenderPreview {
                 let state = AppState()
                 state.theme = scheme
                 state.phase = phase
+                // Vary the settings across cases so every control state is drawn.
+                if name == "active" { state.hotKey = .rightCommand; state.previewLaunchAtLogin(true) }
                 recent.forEach { state.record($0) }
 
                 let view = PopoverView(state: state)

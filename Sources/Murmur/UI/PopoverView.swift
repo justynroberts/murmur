@@ -29,6 +29,7 @@ struct PopoverView: View {
             header
             statusCard
             if !state.recent.isEmpty { recentList }
+            settings
             footer
         }
         .padding(16)
@@ -107,8 +108,8 @@ struct PopoverView: View {
                     label("Ready", Tokens.text(scheme), weight: .semibold)
                 }
                 HStack(spacing: 5) {
-                    keycap("⌥")
-                    label("Hold Right Option, speak, release.", Tokens.text2(scheme), size: 11)
+                    keycap(state.hotKey.symbol)
+                    label("Hold \(state.hotKey.name), speak, release.", Tokens.text2(scheme), size: 11)
                 }
 
             case .recording(let seconds):
@@ -219,6 +220,91 @@ struct PopoverView: View {
         .animation(.easeOut(duration: 0.32), value: state.recent)
     }
 
+    // MARK: - Settings
+
+    /// Pure SwiftUI controls rather than Picker and Toggle: those are
+    /// AppKit-backed, which ImageRenderer cannot draw, so `render-ui` would
+    /// verify nothing. Keycaps and a pill switch also match DESIGN.md better
+    /// than stock controls do.
+    private var settings: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            Text("SETTINGS")
+                .font(Fonts.mono(9))
+                .tracking(0.8)
+                .foregroundStyle(Tokens.text3(scheme))
+
+            VStack(alignment: .leading, spacing: 6) {
+                label("Hold to dictate", Tokens.text2(scheme), size: 11.5)
+                HStack(spacing: 5) {
+                    ForEach(HotKey.allCases) { key in
+                        keyChip(key)
+                    }
+                }
+            }
+
+            HStack {
+                label("Launch at login", Tokens.text2(scheme), size: 11.5)
+                Spacer()
+                pillSwitch(isOn: $state.launchAtLogin, label: "Launch at login")
+            }
+
+            if let note = state.settingsNote {
+                label(note, Tokens.coral, size: 10)
+                    .transition(.blurIn)
+            }
+        }
+        .animation(.easeOut(duration: 0.22), value: state.settingsNote)
+    }
+
+    private func keyChip(_ key: HotKey) -> some View {
+        let selected = state.hotKey == key
+        let side = key.name.hasPrefix("Right") ? "R" : "L"
+        return Button {
+            withAnimation(.easeOut(duration: 0.18)) { state.hotKey = key }
+        } label: {
+            Text("\(side) \(key.symbol)")
+                .font(Fonts.mono(10))
+                .foregroundStyle(selected ? Color.white : Tokens.text(scheme))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 5)
+                .background(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(selected ? AnyShapeStyle(Tokens.gradient)
+                                       : AnyShapeStyle(Tokens.raised(scheme)))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .strokeBorder(selected ? Color.clear : Tokens.border(scheme))
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(key.name)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .help(key.name)
+        .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
+    }
+
+    private func pillSwitch(isOn: Binding<Bool>, label: String) -> some View {
+        Button {
+            withAnimation(.easeOut(duration: 0.18)) { isOn.wrappedValue.toggle() }
+        } label: {
+            ZStack(alignment: isOn.wrappedValue ? .trailing : .leading) {
+                Capsule()
+                    .fill(isOn.wrappedValue ? AnyShapeStyle(Tokens.gradient)
+                                            : AnyShapeStyle(Tokens.border(scheme)))
+                Circle()
+                    .fill(Color.white)
+                    .padding(2)
+                    .shadow(color: .black.opacity(0.18), radius: 1, y: 1)
+            }
+            .frame(width: 32, height: 18)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .accessibilityValue(isOn.wrappedValue ? "On" : "Off")
+        .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
+    }
+
     // MARK: - Footer
 
     private var footer: some View {
@@ -251,6 +337,18 @@ struct PopoverView: View {
             Text("Version \(Bundle.main.appVersion)")
                 .font(Fonts.mono(10))
                 .foregroundStyle(Tokens.text3(scheme))
+
+            // New versions are found by the user, not the app: Murmur makes no
+            // network requests of its own, and that includes update checks.
+            HStack(spacing: 14) {
+                linkButton("Website", "https://justynroberts.github.io/murmur/")
+                linkButton("Releases", "https://github.com/justynroberts/murmur/releases")
+            }
+            Text("Murmur never checks for updates itself. New versions are on the releases page.")
+                .font(Fonts.display(10))
+                .foregroundStyle(Tokens.text3(scheme))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
 
             (Text("Made by ").foregroundColor(Tokens.text2(scheme))
              + Text("FintonLabs").foregroundColor(Tokens.accent(scheme)))
@@ -303,6 +401,21 @@ struct PopoverView: View {
         if !NSWorkspace.shared.open(url) {
             NSWorkspace.shared.activateFileViewerSelecting([url])
         }
+    }
+
+    private func linkButton(_ title: String, _ urlString: String) -> some View {
+        Button {
+            if let url = URL(string: urlString) { NSWorkspace.shared.open(url) }
+        } label: {
+            HStack(spacing: 4) {
+                Text(title)
+                Image(systemName: "arrow.up.right").font(.system(size: 8, weight: .semibold))
+            }
+            .font(Fonts.display(11.5, .medium))
+            .foregroundStyle(Tokens.accent(scheme))
+        }
+        .buttonStyle(.plain)
+        .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
     }
 
     private func iconButton(_ symbol: String, label: String,

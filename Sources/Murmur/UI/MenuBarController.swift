@@ -31,6 +31,11 @@ final class MenuBarController {
             .receive(on: RunLoop.main)
             .sink { [weak self] in self?.render($0) }
             .store(in: &cancellables)
+        state.$hotKey
+            .dropFirst()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self.map { $0.render($0.state.phase) } }
+            .store(in: &cancellables)
     }
 
     /// The icon carries state on its own, so the popover does not have to be open
@@ -65,7 +70,7 @@ final class MenuBarController {
 
         switch phase {
         case .settingUp(let detail, _): button.toolTip = "Murmur — \(detail)"
-        case .ready:                    button.toolTip = "Murmur — hold Right Option to dictate"
+        case .ready:                    button.toolTip = "Murmur — hold \(state.hotKey.name) to dictate"
         case .recording:                button.toolTip = "Murmur — recording"
         case .failed(let message):      button.toolTip = "Murmur — \(message)"
         default:                        button.toolTip = "Murmur"

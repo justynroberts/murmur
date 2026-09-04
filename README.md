@@ -4,8 +4,8 @@
   <p><strong>Offline push-to-talk dictation for macOS.</strong></p>
 </div>
 
-Hold **Right Option**, speak, release — cleaned-up text appears in whatever app you
-were typing in.
+Hold **Right Option** (or another modifier of your choosing), speak, release —
+cleaned-up text appears in whatever app you were typing in.
 
 Nothing leaves your Mac. No account, no subscription, no network access after the
 one-time model download.

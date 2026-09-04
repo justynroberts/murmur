@@ -1,6 +1,9 @@
 # Troubleshooting
 
-## Nothing happens when I hold Right Option
+## Nothing happens when I hold the key
+
+First check which key it is: the panel shows it under Ready, and Settings lets you
+pick a different modifier if your keyboard has no Right Option.
 
 Almost always Accessibility permission. Murmur needs it twice over — to watch for
 the hotkey and to insert text.
