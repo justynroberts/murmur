@@ -61,8 +61,10 @@ Verify it yourself:
 swift run Murmur selftest test_short.wav --offline
 ```
 
-That refuses the network for the entire run and still transcribes. The only time
-Murmur touches the network is the one-off model download on first launch.
+That refuses the network for the entire run and still transcribes. Murmur touches the
+network in two cases only: the one-off model download on first launch, and — if you
+have switched it on under Settings — a once-a-day request to GitHub for the latest
+version number. That check is off by default and sends nothing else.
 
 ## Rebuilding from scratch
 

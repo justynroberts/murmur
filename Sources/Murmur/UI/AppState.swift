@@ -86,6 +86,18 @@ final class AppState: ObservableObject {
     @Published var settingsNote: String?
     private var applyingLoginItem = false
 
+    // MARK: Updates — opt-in, off by default. See UpdateChecker.
+
+    enum UpdateStatus: Equatable { case idle, checking, checked(Date), failed }
+
+    @Published var checkForUpdates: Bool = false {
+        didSet { UserDefaults.standard.set(checkForUpdates, forKey: "checkForUpdates") }
+    }
+    @Published var availableUpdate: UpdateInfo?
+    @Published var updateStatus: UpdateStatus = .idle
+    /// Set by `UpdateChecker`; the "Check now" button calls it.
+    var requestUpdateCheck: (() -> Void)?
+
     /// Sets the switch without touching `SMAppService`. For previews only —
     /// the bare binary has no bundle to register.
     func previewLaunchAtLogin(_ on: Bool) {
@@ -103,6 +115,7 @@ final class AppState: ObservableObject {
            let stored = HotKey(rawValue: raw) {
             hotKey = stored
         }
+        checkForUpdates = UserDefaults.standard.bool(forKey: "checkForUpdates")
         // Ask the system rather than trusting a stored flag: the user can remove
         // the login item in System Settings and the switch must show that.
         applyingLoginItem = true

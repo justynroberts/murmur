@@ -26,8 +26,16 @@ enum RenderPreview {
                 let state = AppState()
                 state.theme = scheme
                 state.phase = phase
+                state.hotKey = .default   // the bare binary's defaults persist between runs
                 // Vary the settings across cases so every control state is drawn.
                 if name == "active" { state.hotKey = .rightCommand; state.previewLaunchAtLogin(true) }
+                if name == "ready" {
+                    state.checkForUpdates = true
+                    state.updateStatus = .checked(Date().addingTimeInterval(-7200))
+                    state.availableUpdate = UpdateInfo(
+                        version: "0.9.0",
+                        url: URL(string: "https://github.com/justynroberts/murmur/releases/latest")!)
+                }
                 recent.forEach { state.record($0) }
 
                 let view = PopoverView(state: state)

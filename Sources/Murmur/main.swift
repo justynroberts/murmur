@@ -14,6 +14,27 @@ if CommandLine.arguments.count > 1, CommandLine.arguments[1] == "cleantest" {
     exit(CleanerTest.run())
 }
 
+/// `murmur updatecheck` exercises the opt-in update path headlessly: one
+/// request, prints what came back and whether it is newer than this build.
+if CommandLine.arguments.count > 1, CommandLine.arguments[1] == "updatecheck" {
+    let semaphore = DispatchSemaphore(value: 0)
+    Task {
+        defer { semaphore.signal() }
+        do {
+            let info = try await UpdateChecker.fetchLatest()
+            let current = Bundle.main.appVersion
+            print("latest:  \(info.version)  \(info.url)")
+            print("current: \(current)")
+            print(UpdateChecker.isNewer(info.version, than: current) ? "update available" : "up to date")
+        } catch {
+            print("updatecheck failed: \(error)")
+            exit(1)
+        }
+    }
+    semaphore.wait()
+    exit(0)
+}
+
 if CommandLine.arguments.count > 2, CommandLine.arguments[1] == "selftest" {
     runSelftest(path: CommandLine.arguments[2],
                 offline: CommandLine.arguments.contains("--offline"))
@@ -90,6 +111,7 @@ func loadSamples(at path: String) throws -> [Float] {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var menuBar: MenuBarController?
     private var dictation: DictationController?
+    private var updater: UpdateChecker?
     private let state = AppState()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -113,6 +135,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         Task { await dictation.boot() }
+
+        // Does nothing unless the user has switched update checks on.
+        let updater = UpdateChecker(state: state)
+        self.updater = updater
+        updater.start()
     }
 }
 

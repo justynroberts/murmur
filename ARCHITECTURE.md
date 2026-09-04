@@ -9,10 +9,15 @@ Murmur — offline push-to-talk dictation for macOS. Hold Right Option, speak, r
 and cleaned-up text lands in whatever app has focus. A free replacement for
 Wispr Flow (~$15/mo) and superwhisper (~$84/yr).
 
-**Non-negotiable: nothing ever leaves the machine.** No cloud fallback, no telemetry,
-no opt-in network path. `Transcriber.load` sets `ModelHub.offlineMode = true`
-after models load, so any later network attempt throws `DownloadError.networkDisabled`
+**Non-negotiable: audio and text never leave the machine.** No cloud fallback, no
+telemetry. `Transcriber.load` sets `ModelHub.offlineMode = true` after models load, so
+any later network attempt through FluidAudio throws `DownloadError.networkDisabled`
 instead of silently succeeding. Keep it that way — the offline guarantee is the product.
+
+There is exactly one other network path, and it is opt-in and off by default:
+`UpdateChecker` asks the GitHub releases API for the latest tag once a day when the
+user switches "Check for updates" on. One request, no identifier, ephemeral session,
+nothing else sent. Do not widen it, and do not add a second one.
 
 ## Commands
 
@@ -26,6 +31,7 @@ swift run Murmur cleantest               # RuleCleaner + UserDictionary assertio
 swift run Murmur selftest test_short.wav             # exercise the ASR path with no keypress
 swift run Murmur selftest test_short.wav --offline   # same, with the network refused for the whole run
 swift run Murmur render-ui <dir>         # render the popover to PNGs (light/dark × setup/ready/active)
+swift run Murmur updatecheck             # one request to the releases API; prints latest vs this build
 ```
 
 There is no XCTest target. `cleantest` is the test suite — a table of
@@ -207,9 +213,12 @@ rarer spelling on its own.
   the real status on launch rather than trusting a stored flag, because the user can
   remove the item in System Settings. It only works from inside `Murmur.app`; the bare
   binary reports not registered.
-- **Murmur never checks for updates.** No network request of any kind is allowed, and
-  that includes the releases API. About links to the website and releases page in the
-  browser instead.
+- **Update checks are opt-in and narrow.** `UpdateChecker` runs only while
+  `AppState.checkForUpdates` is on: immediately on switching on (the user just consented
+  and wants to see it work), then hourly it asks whether 24h have passed since
+  `lastUpdateCheck`. Switching off cancels anything in flight and clears the banner.
+  `swift run Murmur updatecheck` exercises the fetch and version comparison headlessly.
+  `render-ui`'s ready case shows the update card.
 
 ## Signing and release
 

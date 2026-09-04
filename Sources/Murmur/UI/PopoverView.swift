@@ -28,6 +28,7 @@ struct PopoverView: View {
         VStack(alignment: .leading, spacing: 14) {
             header
             statusCard
+            if let update = state.availableUpdate { updateCard(update) }
             if !state.recent.isEmpty { recentList }
             settings
             footer
@@ -248,12 +249,86 @@ struct PopoverView: View {
                 pillSwitch(isOn: $state.launchAtLogin, label: "Launch at login")
             }
 
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    label("Check for updates", Tokens.text2(scheme), size: 11.5)
+                    Spacer()
+                    pillSwitch(isOn: $state.checkForUpdates, label: "Check for updates")
+                }
+                if state.checkForUpdates {
+                    HStack(spacing: 6) {
+                        if state.updateStatus == .checking {
+                            ProgressView().controlSize(.mini)
+                        }
+                        label(updateStatusText, Tokens.text3(scheme), size: 10)
+                        Spacer()
+                        if state.updateStatus != .checking {
+                            Button("Check now") { state.requestUpdateCheck?() }
+                                .buttonStyle(.plain)
+                                .font(Fonts.display(10, .medium))
+                                .foregroundStyle(Tokens.accent(scheme))
+                                .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
+                        }
+                    }
+                    .transition(.blurIn)
+                }
+                label("Off by default. When on, Murmur asks GitHub for the latest version number once a day. Nothing else is ever sent.",
+                      Tokens.text3(scheme), size: 9.5)
+            }
+            .animation(.easeOut(duration: 0.22), value: state.checkForUpdates)
+
             if let note = state.settingsNote {
                 label(note, Tokens.coral, size: 10)
                     .transition(.blurIn)
             }
         }
         .animation(.easeOut(duration: 0.22), value: state.settingsNote)
+    }
+
+    private var updateStatusText: String {
+        switch state.updateStatus {
+        case .idle:      return "Not checked yet"
+        case .checking:  return "Checking…"
+        case .failed:    return "Could not reach GitHub"
+        case .checked(let when):
+            let ago = RelativeDateTimeFormatter()
+            ago.unitsStyle = .short
+            let base = state.availableUpdate == nil ? "Up to date" : "Update available"
+            return "\(base) · checked \(ago.localizedString(for: when, relativeTo: Date()))"
+        }
+    }
+
+    // MARK: - Update available
+
+    private func updateCard(_ update: UpdateInfo) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "arrow.down.circle.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Tokens.gradient)
+            VStack(alignment: .leading, spacing: 1) {
+                label("Murmur \(update.version) is available", Tokens.text(scheme), size: 12, weight: .semibold)
+                label("You have \(Bundle.main.appVersion). Opens the release page in your browser.",
+                      Tokens.text3(scheme), size: 10)
+            }
+            Spacer(minLength: 6)
+            Button("Get it") { NSWorkspace.shared.open(update.url) }
+                .buttonStyle(.plain)
+                .font(Fonts.display(11, .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 12).padding(.vertical, 5)
+                .background(Capsule().fill(Tokens.gradient))
+                .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
+        }
+        .padding(11)
+        .background(
+            RoundedRectangle(cornerRadius: Tokens.rPanel, style: .continuous)
+                .fill(Tokens.raised(scheme).opacity(scheme == .dark ? 0.7 : 1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Tokens.rPanel, style: .continuous)
+                        .strokeBorder(Tokens.gradient, lineWidth: 1)
+                )
+        )
+        .transition(.blurIn)
     }
 
     private func keyChip(_ key: HotKey) -> some View {
@@ -338,13 +413,13 @@ struct PopoverView: View {
                 .font(Fonts.mono(10))
                 .foregroundStyle(Tokens.text3(scheme))
 
-            // New versions are found by the user, not the app: Murmur makes no
-            // network requests of its own, and that includes update checks.
+            // Update checks are opt-in; by default new versions are found by the
+            // user, in the browser, and the app makes no network request at all.
             HStack(spacing: 14) {
                 linkButton("Website", "https://justynroberts.github.io/murmur/")
                 linkButton("Releases", "https://github.com/justynroberts/murmur/releases")
             }
-            Text("Murmur never checks for updates itself. New versions are on the releases page.")
+            Text("Murmur only checks for updates if you switch that on in Settings.")
                 .font(Fonts.display(10))
                 .foregroundStyle(Tokens.text3(scheme))
                 .multilineTextAlignment(.center)

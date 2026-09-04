@@ -8,7 +8,8 @@ Hold **Right Option** (or another modifier of your choosing), speak, release —
 cleaned-up text appears in whatever app you were typing in.
 
 Nothing leaves your Mac. No account, no subscription, no network access after the
-one-time model download.
+one-time model download — unless you switch on the optional update check, which asks
+GitHub for the latest version number once a day and sends nothing else.
 
 ## Why
 
@@ -36,8 +37,8 @@ open Murmur.app
 ```
 
 Grant **Accessibility** and **Microphone** when prompted. The first launch
-downloads the Parakeet model (~2.3GB) once, after which the network is locked off
-for good.
+downloads the Parakeet model (~2.3GB) once, after which the network is locked off.
+Update checks are off by default; the switch is in the panel under Settings.
 
 Releases are signed with a Developer ID and notarised by Apple, so they open
 without a Gatekeeper warning.

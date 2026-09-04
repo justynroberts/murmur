@@ -437,6 +437,11 @@ footer a:hover { text-decoration: underline; }
       </p>
       <p>You can check it yourself — this refuses the network for the entire run and still transcribes:</p>
       <pre><b>swift run</b> Murmur selftest test_short.wav --offline</pre>
+      <p style="margin:16px 0 0">
+        The one exception is yours to switch on. <strong>Check for updates</strong>, off by default,
+        asks GitHub for the latest version number once a day and sends nothing else. Leave it off and
+        Murmur never makes a network request again.
+      </p>
     </div>
   </section>
 
@@ -517,7 +522,7 @@ footer a:hover { text-decoration: underline; }
         <li>
           <strong>Wait for the one-off setup.</strong> The first launch downloads the speech model (~2.3GB)
           and compiles it for the Neural Engine. The menu bar icon shows progress. After that the
-          network is locked off for good.
+          network is locked off, unless you switch on update checks.
         </li>
         <li>
           <strong>Hold <kbd>⌥</kbd> right Option, speak, release.</strong> Text appears wherever the
