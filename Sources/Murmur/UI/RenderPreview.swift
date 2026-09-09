@@ -21,7 +21,16 @@ enum RenderPreview {
             ])
         ]
 
-        let allCases = cases + [("settings", .ready, [])]
+        let allCases = cases + [
+            ("settings", .ready, []),
+            ("update", .ready, []),
+            ("meeting", .ready, [
+                Dictation(text: "Move the retro to Thursday and invite the platform team.",
+                          spoken: 4.1, latency: 0.19, injected: true)
+            ]),
+        ]
+        // README shots are taken from the bundled app so the version reads
+        // as a real one; the bare binary says "dev".
         for scheme in [ThemeChoice.light, ThemeChoice.dark] {
             for (name, phase, recent) in allCases {
                 let state = AppState()
@@ -31,21 +40,25 @@ enum RenderPreview {
                 if name == "settings" { state.page = .settings; state.checkForUpdates = true }
                 state.hotKey = .default   // the bare binary's defaults persist between runs
                 // Vary the settings across cases so every control state is drawn.
-                if name == "active" {
-                    state.hotKey = .rightCommand; state.previewLaunchAtLogin(true)
-                    state.meeting = MeetingRecorder.Session(
-                        startedAt: Date().addingTimeInterval(-754),
-                        fileURL: state.transcriptFolder.appendingPathComponent("Meeting 2026-09-09 14.03.md"),
-                        segments: 23, lastSavedAt: Date().addingTimeInterval(-12))
-                }
+                if name == "active" { state.previewLaunchAtLogin(true) }
                 if name == "ready" { state.hotKey = .leftOption; state.meetingKey = .rightOption }
                 if name == "ready" {
+                    state.checkForUpdates = true
+                    state.updateStatus = .checked(Date().addingTimeInterval(-7200))
+                }
+                if name == "update" {
                     state.checkForUpdates = true
                     state.updateStatus = .checked(Date().addingTimeInterval(-7200))
                     state.availableUpdate = UpdateInfo(
                         version: "0.9.0",
                         url: URL(string: "https://github.com/justynroberts/murmur/releases/latest")!,
                         downloadURL: nil, downloadSize: nil)
+                }
+                if name == "meeting" {
+                    state.meeting = MeetingRecorder.Session(
+                        startedAt: Date().addingTimeInterval(-1523),
+                        fileURL: state.transcriptFolder.appendingPathComponent("Meeting 2026-09-09 10.00.md"),
+                        segments: 41, lastSavedAt: Date().addingTimeInterval(-3))
                 }
                 recent.forEach { state.record($0) }
 

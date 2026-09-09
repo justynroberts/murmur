@@ -202,6 +202,17 @@ h1 {
 .links span { color: var(--text-3); font-size: .9rem; }
 @media (max-width: 560px) { .links li { grid-template-columns: 1fr; gap: 2px; } }
 
+.shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; align-items: start; }
+.shots figure { margin: 0; }
+.shots img {
+  max-width: 100%; height: auto; display: block;
+  border-radius: var(--r-panel); border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-soft);
+  transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.shots img:hover { transform: translateY(-3px); box-shadow: var(--shadow-pop); }
+.shots figcaption { font-size: .82rem; color: var(--text-3); margin-top: 8px; }
+
 .source { margin-top: 22px; border-top: 1px solid var(--border-subtle); padding-top: 16px; }
 .source summary {
   cursor: pointer; color: var(--text-3); font-size: .88rem; list-style: none;
@@ -482,6 +493,16 @@ footer a:hover { text-decoration: underline; }
       stray “um” in is far better than losing something you actually said, so the default pass only
       removes what it can prove is noise.
     </p>
+  </section>
+
+  <section class="rise">
+    <h2>What it looks like</h2>
+    <div class="shots">
+      <figure><img src="shots/panel-ready.png" width="326" height="160" alt="The Murmur panel, ready to dictate" loading="lazy"><figcaption>The panel. Status, and a Start meeting action.</figcaption></figure>
+      <figure><img src="shots/menubar-menu.png" width="166" height="142" alt="Right-click menu on the menu bar icon" loading="lazy"><figcaption>Right-click the menu bar icon.</figcaption></figure>
+      <figure><img src="shots/popover-light-meeting.png" width="340" height="353" alt="A meeting being recorded, with segments saved" loading="lazy"><figcaption>A meeting in progress, saved as it goes.</figcaption></figure>
+      <figure><img src="shots/panel-settings.png" width="331" height="365" alt="Settings" loading="lazy"><figcaption>Settings, behind the gear.</figcaption></figure>
+    </div>
   </section>
 
   <section class="rise">
