@@ -160,6 +160,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var menuBar: MenuBarController?
     private var dictation: DictationController?
     private var updater: UpdateChecker?
+    private var setup: SetupWindowController?
     private let state = AppState()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -173,13 +174,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Show the panel on first run so the one-off setup is visible rather than
         // looking like a hang behind a silent menu bar icon.
-        if !UserDefaults.standard.bool(forKey: "hasLaunchedBefore") {
-            UserDefaults.standard.set(true, forKey: "hasLaunchedBefore")
-            // The status item has no window until the run loop turns, and a
-            // popover anchored to a windowless button never appears.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                menuBar.presentOnce()
-            }
+        // Setup gets a real window, on launch, until it has completed once —
+        // and again any time Accessibility has been taken away. It does not
+        // depend on the menu bar icon being visible.
+        let setup = SetupWindowController(state: state)
+        self.setup = setup
+        state.requestSetupWindow = { [weak setup] in setup?.show() }
+        UserDefaults.standard.set(true, forKey: "hasLaunchedBefore")
+        if !SetupWindowController.hasCompletedSetup || !AXIsProcessTrusted() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { setup.show() }
         }
 
         Task {

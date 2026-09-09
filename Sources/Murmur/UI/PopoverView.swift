@@ -122,6 +122,27 @@ struct PopoverView: View {
             case .starting:
                 label("Starting…", Tokens.text2(scheme))
 
+            case .permissions(let accessibility, let microphone):
+                HStack(spacing: 7) {
+                    Circle().fill(Tokens.accent(scheme)).frame(width: 7, height: 7)
+                    label("Two permissions to grant", Tokens.text(scheme), weight: .semibold)
+                }
+                permissionRow(
+                    granted: accessibility, name: "Accessibility",
+                    why: "Lets Murmur watch for the key and type into other apps.",
+                    pane: "Privacy_Accessibility")
+                permissionRow(
+                    granted: microphone, name: "Microphone",
+                    why: "So it can hear you. Audio never leaves this Mac.",
+                    pane: "Privacy_Microphone")
+                label("Murmur carries on by itself once both are on. No relaunch needed.",
+                      Tokens.text3(scheme), size: 10)
+                Button("Open the setup window") { state.requestSetupWindow?() }
+                    .buttonStyle(.plain)
+                    .font(Fonts.display(10.5, .medium))
+                    .foregroundStyle(Tokens.accent(scheme))
+                    .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
+
             case .settingUp(let detail, let fraction):
                 HStack(spacing: 7) {
                     Circle().fill(Tokens.accent(scheme)).frame(width: 7, height: 7)
@@ -190,11 +211,41 @@ struct PopoverView: View {
         .animation(.easeOut(duration: 0.32), value: phaseKey)
     }
 
+    private func permissionRow(granted: Bool, name: String, why: String, pane: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: granted ? "checkmark.circle.fill" : "circle")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(granted ? Color.green : Tokens.text3(scheme))
+                .frame(width: 16)
+                .padding(.top, 1)
+            VStack(alignment: .leading, spacing: 2) {
+                label(name, Tokens.text(scheme), size: 12, weight: .semibold)
+                label(why, Tokens.text3(scheme), size: 10.5)
+            }
+            Spacer(minLength: 6)
+            if !granted {
+                Button("Open Settings") {
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(pane)") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                .buttonStyle(.plain)
+                .font(Fonts.display(10.5, .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 10).padding(.vertical, 4)
+                .background(Capsule().fill(Tokens.gradient))
+                .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
     /// Changing this forces the blur-in transition when the state changes kind,
     /// but not on every tick of the recording timer.
     private var phaseKey: String {
         switch state.phase {
         case .starting: return "starting"
+        case .permissions(let a, let m): return "permissions-\(a)-\(m)"
         case .settingUp: return "setup"
         case .ready: return "ready"
         case .recording: return "recording"

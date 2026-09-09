@@ -155,9 +155,14 @@ Grotesque. Every colour has both a light and a dark value; the visual language i
 specified in `DESIGN.md` (Soft-product archetype, blur-in motion signature) and the
 popover must keep the "Made by FintonLabs" affordance.
 
-The popover is shown automatically on first launch (`hasLaunchedBefore` in
-UserDefaults) so model download does not look like a hang. The 0.4s delay before
-showing it is required — the status item has no window until the run loop turns.
+**Setup is a real window** (`SetupWindowController`, `SetupView`), shown on launch until
+it has completed once (`hasCompletedSetup`) and again whenever Accessibility has been taken
+away. It does not depend on the status item: on a notched MacBook with a full menu bar the
+item can have no window at all, and a popover anchored to it never appears. The window
+walks Accessibility, Microphone and the model download with live status and Open Settings
+buttons into the right pane. `Phase.permissions` is polled once a second in
+`DictationController.boot`, so a grant is picked up without a relaunch; the system prompt
+is requested once and not relied upon, since macOS does not always show it.
 
 ## Meeting mode
 

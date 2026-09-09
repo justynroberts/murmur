@@ -45,13 +45,18 @@ final class DictationController {
         // rather than appearing only after the first dictation.
         _ = UserDictionary.shared.count
 
-        guard requestAccessibility() else {
-            state.phase = .failed("Grant Accessibility in System Settings, then relaunch.")
-            return
-        }
-        guard await requestMicrophone() else {
-            state.phase = .failed("Microphone access was denied.")
-            return
+        // Ask once (this is what puts the system dialog up, when macOS decides
+        // to show one), then wait. The panel shows what is missing with a button
+        // into the right System Settings pane, and the grant is picked up live,
+        // so nobody has to relaunch.
+        _ = requestAccessibility()
+        var microphone = await requestMicrophone()
+        while !AXIsProcessTrusted() || !microphone {
+            state.phase = .permissions(accessibility: AXIsProcessTrusted(), microphone: microphone)
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            if !microphone {
+                microphone = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
+            }
         }
 
         // Arm the hotkey *before* the models load, so a first-run user can already

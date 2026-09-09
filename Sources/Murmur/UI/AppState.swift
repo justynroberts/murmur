@@ -6,6 +6,8 @@ import SwiftUI
 /// What the app is doing right now. The menu bar icon and the popover both read from this.
 enum Phase: Equatable {
     case starting
+    /// Waiting on the user in System Settings. Polled; clears itself.
+    case permissions(accessibility: Bool, microphone: Bool)
     case settingUp(detail: String, fraction: Double?)
     case ready
     case recording(seconds: TimeInterval)
@@ -14,7 +16,7 @@ enum Phase: Equatable {
 
     var isBusy: Bool {
         switch self {
-        case .starting, .settingUp: return true
+        case .starting, .settingUp, .permissions: return true
         default: return false
         }
     }
@@ -104,6 +106,9 @@ final class AppState: ObservableObject {
     }
     @Published var meeting: MeetingRecorder.Session?
     @Published var meetingNote: String?
+    /// Set by the app delegate; the popover offers it while setup is pending.
+    var requestSetupWindow: (() -> Void)?
+
     /// Set by `DictationController`; the popover and the status menu call them.
     var requestMeetingStop: (() -> Void)?
     var requestMeetingStart: (() -> Void)?

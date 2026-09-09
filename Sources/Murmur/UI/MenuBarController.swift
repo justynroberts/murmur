@@ -48,7 +48,7 @@ final class MenuBarController {
         var tint: NSColor?
 
         switch phase {
-        case .starting, .settingUp:
+        case .starting, .settingUp, .permissions:
             symbol = "waveform.badge.exclamationmark"
             tint = .secondaryLabelColor
         case .ready where state.meeting != nil:
@@ -75,6 +75,7 @@ final class MenuBarController {
 
         switch phase {
         case .settingUp(let detail, _): button.toolTip = "Murmur — \(detail)"
+        case .permissions:              button.toolTip = "Murmur — needs Accessibility and Microphone; click for details"
         case .ready where state.meeting != nil:
             button.toolTip = "Murmur — meeting mode is recording; tap \(state.meetingKey.name) to stop"
         case .ready:                    button.toolTip = "Murmur — hold \(state.hotKey.name) to dictate"

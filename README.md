@@ -30,14 +30,16 @@ Requires macOS 14 or later on Apple Silicon.
 1. **Download** [the latest disk image](https://github.com/justynroberts/murmur/releases/latest)
    and drag Murmur into Applications. It is signed and notarised, so it opens without a
    Gatekeeper warning.
-2. **Open Murmur** and grant **Accessibility** and **Microphone** when asked.
-   Accessibility is what lets it watch for the key and type into other apps.
-3. **Wait for the one-off setup.** The first launch downloads the speech model (about 2.3GB)
-   and compiles it for the Neural Engine, a few minutes on the first run. The panel opens
-   by itself to show progress, and the menu bar icon is dimmed until it is done.
+2. **Open Murmur.** A setup window appears and walks through the rest. Grant
+   **Accessibility** and **Microphone** with the Open Settings buttons; Accessibility is
+   what lets it watch for the key and type into other apps. It carries on by itself the
+   moment each is granted.
+3. **Let it fetch the speech model.** About 2.3GB, downloaded once, a few minutes on a
+   typical connection, then under a minute to compile for the Neural Engine. The window
+   shows progress; close it if you like and the menu bar icon takes over.
 
 <p align="center">
-  <img src="docs/screenshots/popover-light-setup.png" width="340" alt="First-run setup with a progress bar">
+  <img src="docs/screenshots/setup-light-download.png" width="420" alt="The setup window during the model download">
 </p>
 
 After that, Murmur lives in the menu bar. Turn on **Launch at login** in Settings and you
