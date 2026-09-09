@@ -18,11 +18,24 @@ actor Transcriber {
     ) async throws {
         ModelHub.offlineMode = !allowingDownload
 
+        // First launch: one zip from GitHub instead of dozens of files from
+        // Hugging Face. Any failure is logged and FluidAudio downloads as before.
+        if allowingDownload, !ModelMirror.isCached {
+            do {
+                try await ModelMirror.seed(onProgress: onProgress)
+            } catch {
+                NSLog("[murmur] model mirror failed (%@); falling back to Hugging Face", error.localizedDescription)
+            }
+        }
+
         let models = try await AsrModels.downloadAndLoad(version: .v2) { progress in
             let detail: String
             switch progress.phase {
             case .downloading(let done, let total):
-                detail = "Downloading speech model — \(done) of \(total) files"
+                // After the mirror has seeded the cache there is nothing left to
+                // fetch, and FluidAudio reports 0 of 0; say what is happening.
+                detail = total == 0 ? "Preparing speech model"
+                                    : "Downloading speech model — \(done) of \(total) files"
             case .compiling(let name):
                 detail = "Compiling \(name) for the Neural Engine"
             @unknown default:

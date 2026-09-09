@@ -14,6 +14,16 @@ telemetry. `Transcriber.load` sets `ModelHub.offlineMode = true` after models lo
 any later network attempt through FluidAudio throws `DownloadError.networkDisabled`
 instead of silently succeeding. Keep it that way — the offline guarantee is the product.
 
+The first-launch model download itself has two sources: `ModelMirror` fetches one
+~450MB zip from a prerelease asset on this repo's GitHub releases (tag `models-parakeet-v2`,
+the unmodified FluidInference conversion, CC BY 4.0, SHA-256 pinned in code), unpacks it
+into FluidAudio's cache directory, and only then calls FluidAudio, which finds the files
+and skips its own download. Any mirror failure is logged and FluidAudio fetches from
+Hugging Face as before. The asset is a *prerelease* so `releases/latest` — which the update
+check and the landing page rely on — never points at it. The zip was made with
+`ditto -c -k --keepParent` from the cache directory; re-publishing it means updating
+`archiveSHA256`.
+
 There is exactly one other network path, and it is opt-in and off by default:
 `UpdateChecker` asks the GitHub releases API for the latest tag once a day when the
 user switches "Check for updates" on. One request, no identifier, ephemeral session,

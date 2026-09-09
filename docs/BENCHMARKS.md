@@ -33,7 +33,7 @@ which is the class of error that erodes trust fastest.
 
 | Condition | Time |
 |---|---|
-| First run (download ~2.3GB) | 387s |
+| First run (download, ~450MB of a 2.5GB repo, many small files from Hugging Face) | 387s |
 | Warm | 0.27s |
 | Cold process, models cached | 35–42s |
 

@@ -5,7 +5,7 @@ import SwiftUI
 /// First-run setup in a real window, not the menu bar popover. A popover
 /// hangs off the status item, and on a notched MacBook with a full menu bar
 /// the item may have no window at all — the user then sees nothing while
-/// permissions are refused and a 2.3GB download runs. This shows on launch
+/// permissions are refused and a 450MB download runs. This shows on launch
 /// until setup has completed once, and never again unless a permission is
 /// lost.
 @MainActor
@@ -185,10 +185,10 @@ struct SetupView: View {
     private func modelRow(_ step: Step) -> some View {
         let (detail, fraction): (String, Double?) = {
             if case .settingUp(let d, let f) = state.phase {
-                return (d + ". A few minutes on a typical connection, once. You can close this window; Murmur carries on in the menu bar.", f)
+                return (d + ". Once only. You can close this window; Murmur carries on in the menu bar.", f)
             }
             return step == .done ? ("Ready. Transcription is instant from now on.", nil)
-                                 : ("About 2.3GB, downloaded once — a few minutes on a typical connection — then compiled for the Neural Engine, under a minute.", nil)
+                                 : ("About 450MB, downloaded once, then compiled for the Neural Engine — under a minute.", nil)
         }()
         return HStack(alignment: .center, spacing: 12) {
             badge(step, number: 3)

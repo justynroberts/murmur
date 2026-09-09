@@ -34,9 +34,9 @@ Requires macOS 14 or later on Apple Silicon.
    **Accessibility** and **Microphone** with the Open Settings buttons; Accessibility is
    what lets it watch for the key and type into other apps. It carries on by itself the
    moment each is granted.
-3. **Let it fetch the speech model.** About 2.3GB, downloaded once, a few minutes on a
-   typical connection, then under a minute to compile for the Neural Engine. The window
-   shows progress; close it if you like and the menu bar icon takes over.
+3. **Let it fetch the speech model.** About 450MB, downloaded once as a single file from
+   GitHub, then under a minute to compile for the Neural Engine. The window shows
+   progress; close it if you like and the menu bar icon takes over.
 
 <p align="center">
   <img src="docs/screenshots/setup-light-download.png" width="420" alt="The setup window during the model download">
