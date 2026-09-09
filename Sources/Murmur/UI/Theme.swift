@@ -74,14 +74,17 @@ enum Fonts {
     private static func fontURL() -> URL? {
         let name = "BricolageGrotesque.ttf"
         let main = Bundle.main
+        // The source tree, for the bare binary only (render-ui, tests). This
+        // is the one place a build-machine path is acceptable: the bare binary
+        // never ships, and a miss here is a logged fallback, not a crash.
+        let source = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Resources/\(name)")
         let candidates: [URL?] = [
             // bundle.sh copies the file straight into Contents/Resources.
             main.url(forResource: "BricolageGrotesque", withExtension: "ttf"),
-            // The SwiftPM resource bundle, also copied into Contents/Resources.
-            main.resourceURL?.appendingPathComponent("Murmur_Murmur.bundle/\(name)"),
-            // The bare binary (render-ui, tests): the bundle sits beside it.
-            main.bundleURL.appendingPathComponent("Murmur_Murmur.bundle/\(name)"),
-            main.executableURL?.deletingLastPathComponent().appendingPathComponent("Murmur_Murmur.bundle/\(name)"),
+            main.resourceURL?.appendingPathComponent(name),
+            source,
         ]
         return candidates.compactMap { $0 }.first { FileManager.default.fileExists(atPath: $0.path) }
     }

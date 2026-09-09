@@ -131,11 +131,22 @@ xcrun stapler staple "$APP" >/dev/null || die "could not staple the app"
 rm "$DIST/Murmur-$VERSION.zip"
 
 step "Building the disk image"
+# A previous verification can leave a volume called Murmur mounted, and
+# hdiutil then fails building a new one of the same name with a misleading
+# "operation not permitted". Detach anything of ours first.
+for v in /Volumes/Murmur*; do
+  [ -d "$v" ] && hdiutil detach "$v" -force -quiet 2>/dev/null && echo "  detached stale $v"
+done
+true
 STAGING="$DIST/staging"
 mkdir -p "$STAGING"
-cp -R "$APP" "$STAGING/"
+ditto "$APP" "$STAGING/$APP"
 ln -s /Applications "$STAGING/Applications"
-hdiutil create -volname "Murmur" -srcfolder "$STAGING" -ov -format UDZO -quiet "$DMG"
+# Versioned volume name: macOS refuses writes under a /Volumes/<name> path an
+# app was once launched from ("operation not permitted"), and every user has
+# launched from /Volumes/Murmur. It also lets two versions mount side by side.
+hdiutil create -volname "Murmur $VERSION" -srcfolder "$STAGING" -ov -format UDZO "$DMG" >/dev/null || \
+  die "hdiutil could not build the disk image" "run it without >/dev/null to see why"
 rm -rf "$STAGING"
 
 # Order is sign → notarise → staple. Signing after stapling destroys the ticket.
