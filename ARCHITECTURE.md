@@ -137,8 +137,17 @@ accumulates on the audio thread behind an `NSLock`. Everything UI-facing is `@Ma
 `ready`, `recording`, `transcribing`, `failed`) drives both the menu bar icon
 (`MenuBarController.render`) and the popover (`PopoverView`). Add state to `Phase`,
 not to views. `recent` keeps the last three dictations. Settings (`hotKey`,
-`launchAtLogin`, `theme`) live there too; `DictationController` subscribes to `hotKey`
-and pushes it into the live event tap.
+`meetingKey`, `transcriptFolder`, `launchAtLogin`, `theme`, `checkForUpdates`) live there
+too; `DictationController` subscribes to the keys and pushes them into the live event tap.
+
+The popover has two pages, `AppState.page`. **Main** is day-to-day: status, the meeting
+card, an update card, recent dictations, and a Start meeting action; its header icons are
+Transcripts, Word list, Settings, About. **Settings** is everything configurable, behind
+the gear, with a back button. Keep configuration off the main page — people open the
+panel to check status and jump into transcripts, not to change keys. A left click on the
+status item opens the main page; a right click shows a menu (Open Transcripts,
+Start/Stop Meeting, Settings…, Quit) via the attach-click-detach trick, since a status
+item with both a click action and a `menu` set would always show the menu.
 
 `Theme.swift` holds the design tokens (iris → magenta → coral gradient, per-scheme
 text/surface colours) and `Fonts.register()`, which loads the bundled Bricolage

@@ -48,9 +48,14 @@ enum ThemeChoice: String, CaseIterable {
     }
 }
 
+/// Which page the popover shows. Day-to-day use is the main page; settings are
+/// out of the way behind the gear, and reachable from the status item's menu.
+enum Page: Equatable { case main, settings }
+
 @MainActor
 final class AppState: ObservableObject {
     @Published var phase: Phase = .starting
+    @Published var page: Page = .main
     @Published var recent: [Dictation] = []
     @Published var theme: ThemeChoice = .auto {
         didSet { UserDefaults.standard.set(theme.rawValue, forKey: "theme") }
@@ -99,8 +104,16 @@ final class AppState: ObservableObject {
     }
     @Published var meeting: MeetingRecorder.Session?
     @Published var meetingNote: String?
-    /// Set by `DictationController`; the popover's Stop button calls it.
+    /// Set by `DictationController`; the popover and the status menu call them.
     var requestMeetingStop: (() -> Void)?
+    var requestMeetingStart: (() -> Void)?
+
+    /// Opens the transcript folder in Finder, creating it if it is not there yet
+    /// so the first click never lands on "no such folder".
+    func openTranscripts() {
+        try? FileManager.default.createDirectory(at: transcriptFolder, withIntermediateDirectories: true)
+        NSWorkspace.shared.open(transcriptFolder)
+    }
 
     static var defaultTranscriptFolder: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]

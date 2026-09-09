@@ -97,7 +97,8 @@ are fixed by a substitution list at
 ```
 
 Open it from the book icon in the panel. Changes apply on the next dictation, no
-restart needed.
+restart needed. The folder icon beside it opens your meeting transcripts; right-clicking
+the menu bar icon gets you there too, along with Start Meeting and Settings.
 
 ## Status
 

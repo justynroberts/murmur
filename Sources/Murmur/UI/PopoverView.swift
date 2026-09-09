@@ -25,19 +25,32 @@ struct PopoverView: View {
     private var scheme: ColorScheme { state.theme.colorScheme ?? systemScheme }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            header
-            statusCard
-            if let meeting = state.meeting { meetingCard(meeting) }
-            if let update = state.availableUpdate { updateCard(update) }
-            if !state.recent.isEmpty { recentList }
-            settings
-            footer
+        Group {
+            switch state.page {
+            case .main:
+                VStack(alignment: .leading, spacing: 14) {
+                    header
+                    statusCard
+                    if let meeting = state.meeting { meetingCard(meeting) }
+                    if let update = state.availableUpdate { updateCard(update) }
+                    if !state.recent.isEmpty { recentList }
+                    footer
+                }
+                .transition(.blurIn)
+            case .settings:
+                VStack(alignment: .leading, spacing: 14) {
+                    settingsHeader
+                    settings
+                    settingsFooter
+                }
+                .transition(.blurIn)
+            }
         }
         .padding(16)
         .frame(width: 340)
         .background(Tokens.raised(scheme).opacity(scheme == .dark ? 0.5 : 0.6))
         .preferredColorScheme(state.theme.colorScheme)
+        .animation(.easeOut(duration: 0.28), value: state.page)
         .sheet(isPresented: $showAbout) { aboutPanel }
     }
 
@@ -66,17 +79,38 @@ struct PopoverView: View {
 
             Spacer()
 
-            iconButton("character.book.closed", label: "Edit word list") {
-                openDictionary()
-            }
-            iconButton(state.theme.symbol, label: "Switch theme") {
-                let all = ThemeChoice.allCases
-                let idx = all.firstIndex(of: state.theme) ?? 0
-                withAnimation(.easeOut(duration: 0.22)) {
-                    state.theme = all[(idx + 1) % all.count]
-                }
-            }
+            // Day-to-day first: transcripts and the word list are the two
+            // things people open most. Settings is one tap away, not in the way.
+            iconButton("folder", label: "Open transcripts") { state.openTranscripts() }
+            iconButton("character.book.closed", label: "Edit word list") { openDictionary() }
+            iconButton("gearshape", label: "Settings") { state.page = .settings }
             iconButton("info", label: "About this app") { showAbout = true }
+        }
+    }
+
+    private var settingsHeader: some View {
+        HStack(spacing: 10) {
+            iconButton("chevron.left", label: "Back") { state.page = .main }
+            Text("Settings")
+                .font(Fonts.display(16, .semibold))
+                .foregroundStyle(Tokens.text(scheme))
+            Spacer()
+            iconButton("info", label: "About this app") { showAbout = true }
+        }
+    }
+
+    private var settingsFooter: some View {
+        HStack {
+            Text("v\(Bundle.main.appVersion) · Made by FintonLabs")
+                .font(Fonts.mono(9.5))
+                .foregroundStyle(Tokens.text3(scheme))
+            Spacer()
+            Button("Done") { state.page = .main }
+                .buttonStyle(.plain)
+                .font(Fonts.display(11, .medium))
+                .foregroundStyle(Tokens.accent(scheme))
+                .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
+                .keyboardShortcut(.cancelAction)
         }
     }
 
@@ -229,11 +263,16 @@ struct PopoverView: View {
     /// verify nothing. Keycaps and a pill switch also match DESIGN.md better
     /// than stock controls do.
     private var settings: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            Text("SETTINGS")
-                .font(Fonts.mono(9))
-                .tracking(0.8)
-                .foregroundStyle(Tokens.text3(scheme))
+        VStack(alignment: .leading, spacing: 11) {
+            HStack {
+                label("Appearance", Tokens.text2(scheme), size: 11.5)
+                Spacer()
+                HStack(spacing: 4) {
+                    ForEach(ThemeChoice.allCases, id: \.self) { choice in
+                        themeChip(choice)
+                    }
+                }
+            }
 
             VStack(alignment: .leading, spacing: 6) {
                 label("Hold to dictate", Tokens.text2(scheme), size: 11.5)
@@ -380,6 +419,27 @@ struct PopoverView: View {
         .transition(.blurIn)
     }
 
+    private func themeChip(_ choice: ThemeChoice) -> some View {
+        let selected = state.theme == choice
+        let name: String = { switch choice { case .auto: return "Auto"; case .light: return "Light"; case .dark: return "Dark" } }()
+        return Button {
+            withAnimation(.easeOut(duration: 0.22)) { state.theme = choice }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: choice.symbol).font(.system(size: 9, weight: .medium))
+                Text(name).font(Fonts.display(10.5, .medium))
+            }
+            .foregroundStyle(selected ? Color.white : Tokens.text(scheme))
+            .padding(.horizontal, 9).padding(.vertical, 4)
+            .background(Capsule().fill(selected ? AnyShapeStyle(Tokens.gradient) : AnyShapeStyle(Tokens.raised(scheme))))
+            .overlay(Capsule().strokeBorder(selected ? Color.clear : Tokens.border(scheme)))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(name) appearance")
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
+    }
+
     /// `taken` is the other mode's key: shown but not selectable, so the two
     /// can never collide.
     private func keyChip(_ key: HotKey, selection: Binding<HotKey>, taken: HotKey) -> some View {
@@ -522,10 +582,26 @@ struct PopoverView: View {
     // MARK: - Footer
 
     private var footer: some View {
-        HStack {
-            Text("Runs entirely on this Mac")
-                .font(Fonts.mono(9.5))
-                .foregroundStyle(Tokens.text3(scheme))
+        HStack(spacing: 14) {
+            if state.meeting == nil {
+                Button {
+                    state.requestMeetingStart?()
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: "record.circle").font(.system(size: 10, weight: .semibold))
+                        Text("Start meeting")
+                    }
+                    .font(Fonts.display(11, .medium))
+                    .foregroundStyle(Tokens.coral)
+                }
+                .buttonStyle(.plain)
+                .help("Tap \(state.meetingKey.name) does the same")
+                .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
+            } else {
+                Text("Runs entirely on this Mac")
+                    .font(Fonts.mono(9.5))
+                    .foregroundStyle(Tokens.text3(scheme))
+            }
             Spacer()
             Button("Quit") { NSApplication.shared.terminate(nil) }
                 .buttonStyle(.plain)

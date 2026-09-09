@@ -32,6 +32,7 @@ final class DictationController {
         self.state = state
         self.meeting = MeetingRecorder(state: state, transcriber: transcriber)
         state.requestMeetingStop = { [weak self] in self?.meeting.stop(reason: "stopped") }
+        state.requestMeetingStart = { [weak self] in self?.meeting.start() }
         hotKey.keys = [state.hotKey, state.meetingKey]
         state.$hotKey.combineLatest(state.$meetingKey)
             .removeDuplicates { $0 == $1 }

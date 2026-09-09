@@ -24,6 +24,7 @@ final class MenuBarController {
             button.action = #selector(toggle)
             button.target = self
             button.imagePosition = .imageOnly
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
 
         render(.starting)
@@ -85,9 +86,50 @@ final class MenuBarController {
 
     @objc private func toggle() {
         guard let button = statusItem.button else { return }
+        if NSApp.currentEvent?.type == .rightMouseUp {
+            showMenu()
+            return
+        }
         if popover.isShown {
             popover.performClose(nil)
         } else {
+            state.page = .main
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            popover.contentViewController?.view.window?.makeKey()
+        }
+    }
+
+    /// Right-click: the day-to-day actions without opening the panel.
+    private func showMenu() {
+        let menu = NSMenu()
+        menu.addItem(withTitle: "Open Transcripts", action: #selector(openTranscripts), keyEquivalent: "t").target = self
+        if state.meeting == nil {
+            menu.addItem(withTitle: "Start Meeting", action: #selector(startMeeting), keyEquivalent: "m").target = self
+        } else {
+            menu.addItem(withTitle: "Stop Meeting", action: #selector(stopMeeting), keyEquivalent: "m").target = self
+        }
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Settings…", action: #selector(openSettings), keyEquivalent: ",").target = self
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Quit Murmur", action: #selector(quit), keyEquivalent: "q").target = self
+
+        // The documented way to pop a menu from a status item that also has
+        // a click action: attach it, click, detach.
+        statusItem.menu = menu
+        statusItem.button?.performClick(nil)
+        statusItem.menu = nil
+    }
+
+    @objc private func openTranscripts() { state.openTranscripts() }
+    @objc private func startMeeting() { state.requestMeetingStart?() }
+    @objc private func stopMeeting() { state.requestMeetingStop?() }
+    @objc private func quit() { NSApplication.shared.terminate(nil) }
+
+    @objc private func openSettings() {
+        guard let button = statusItem.button else { return }
+        state.page = .settings
+        if !popover.isShown {
+            NSApp.activate(ignoringOtherApps: true)
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKey()
         }

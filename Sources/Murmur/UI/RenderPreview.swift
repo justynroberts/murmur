@@ -21,12 +21,14 @@ enum RenderPreview {
             ])
         ]
 
+        let allCases = cases + [("settings", .ready, [])]
         for scheme in [ThemeChoice.light, ThemeChoice.dark] {
-            for (name, phase, recent) in cases {
+            for (name, phase, recent) in allCases {
                 let state = AppState()
                 state.theme = scheme
                 state.phase = phase
                 state.transcriptFolder = AppState.defaultTranscriptFolder
+                if name == "settings" { state.page = .settings; state.checkForUpdates = true }
                 state.hotKey = .default   // the bare binary's defaults persist between runs
                 // Vary the settings across cases so every control state is drawn.
                 if name == "active" {
