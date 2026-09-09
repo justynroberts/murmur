@@ -243,10 +243,14 @@ rarer spelling on its own.
   after every build, or Accessibility silently stops working. Running the bare binary
   from `.build/` never gets a grant. If it is enabled and still broken, remove and
   re-add Murmur in System Settings → Accessibility.
-- **Resources must travel into the bundle.** SwiftPM emits `.bundle` directories next to
-  the binary; `bundle.sh` copies them into `Contents/Resources`. Skip that and
-  `Bundle.module` finds nothing, which shows up as the UI silently falling back to the
-  system font.
+- **Never call `Bundle.module`.** SwiftPM's generated accessor checks beside the `.app`
+  and a hard-coded absolute path into *this machine's* `.build`, then `fatalError`s. It
+  passes every test here and crashes at launch on any other Mac — 0.8.0 shipped that way
+  and died on an M4 at +0.4s in `Fonts.register`. `bundle.sh` copies the font flat into
+  `Contents/Resources` and `Fonts.register` finds it by hand with a logged fallback;
+  `release.sh` launches the built app with `.build` hidden and refuses to ship if it
+  does not render. FluidAudio's own `Bundle.module` is only on its TTS path, which
+  Murmur never touches; if that changes, the same trap applies.
 - **Text injection** uses pasteboard + synthesised Cmd-V, not per-character synthesis.
   Measured at 0.73ms to save and restore the clipboard, and it works in apps that drop
   synthetic keystrokes. Always restore the user's clipboard afterwards.

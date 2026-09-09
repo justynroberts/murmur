@@ -19,13 +19,17 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Murmur"
 cp "$ROOT/Assets/Murmur.icns" "$APP/Contents/Resources/Murmur.icns"
 
-# SwiftPM emits resources as sibling .bundle directories. They must travel into
-# Contents/Resources or Bundle.module finds nothing at runtime — which shows up
-# as the UI silently falling back to the system font.
+# SwiftPM emits resources as sibling .bundle directories. They travel into
+# Contents/Resources for FluidAudio's sake, but the app must never reach them
+# through Bundle.module: that accessor looks beside the .app and at a path into
+# this machine's .build directory, and fatalErrors elsewhere. Our own font is
+# copied in flat and found by hand (see Fonts.register). release.sh proves the
+# built app launches with .build hidden.
 for b in "$ROOT/.build/$CONFIG"/*.bundle; do
     [ -e "$b" ] || continue
     cp -R "$b" "$APP/Contents/Resources/"
 done
+cp "$ROOT/Sources/Murmur/Resources/BricolageGrotesque.ttf" "$APP/Contents/Resources/"
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

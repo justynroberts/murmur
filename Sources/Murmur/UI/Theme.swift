@@ -48,20 +48,42 @@ enum Tokens {
 
 /// Registers the bundled variable font. Bricolage is not a system face, so
 /// without this the UI silently falls back and the house style is not met.
+///
+/// **Never use `Bundle.module` here, or anywhere in the app.** SwiftPM's
+/// generated accessor looks beside the .app and at a hard-coded path into the
+/// build directory of the machine that compiled it, and calls `fatalError`
+/// when both are missing — which is every machine but the developer's. That
+/// took 0.8.0 down at launch on an M4 while working perfectly here. The font
+/// is found by hand instead, and a miss is a logged fallback, never a crash.
 enum Fonts {
     private static var registered = false
 
     static func register() {
         guard !registered else { return }
         registered = true
-        guard let url = Bundle.module.url(forResource: "BricolageGrotesque", withExtension: "ttf") else {
-            NSLog("[murmur] Bricolage not found in bundle — falling back to system font")
+        guard let url = fontURL() else {
+            NSLog("[murmur] Bricolage not found — falling back to the system font")
             return
         }
         var error: Unmanaged<CFError>?
         if !CTFontManagerRegisterFontsForURL(url as CFURL, .process, &error) {
             NSLog("[murmur] font registration failed: \(String(describing: error))")
         }
+    }
+
+    private static func fontURL() -> URL? {
+        let name = "BricolageGrotesque.ttf"
+        let main = Bundle.main
+        let candidates: [URL?] = [
+            // bundle.sh copies the file straight into Contents/Resources.
+            main.url(forResource: "BricolageGrotesque", withExtension: "ttf"),
+            // The SwiftPM resource bundle, also copied into Contents/Resources.
+            main.resourceURL?.appendingPathComponent("Murmur_Murmur.bundle/\(name)"),
+            // The bare binary (render-ui, tests): the bundle sits beside it.
+            main.bundleURL.appendingPathComponent("Murmur_Murmur.bundle/\(name)"),
+            main.executableURL?.deletingLastPathComponent().appendingPathComponent("Murmur_Murmur.bundle/\(name)"),
+        ]
+        return candidates.compactMap { $0 }.first { FileManager.default.fileExists(atPath: $0.path) }
     }
 
     /// `weight` maps onto the variable `wght` axis via SwiftUI's weight bridging.
