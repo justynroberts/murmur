@@ -100,17 +100,21 @@ swift build -c release 2>&1 | tail -1
 # into .build here, so a resource lookup that only works because of it passes
 # every local test and crashes at launch for everyone else (0.8.0 did). Launch
 # the built app headlessly with .build out of the way; it must render the UI.
-step "Launching the built app with .build hidden"
+# Run a *copy*: launching a bundle tags it with com.apple.provenance, after
+# which stapler cannot write its ticket into it (error 73).
+step "Launching a copy of the built app with .build hidden"
 SMOKE="$(mktemp -d)"
+ditto "$APP" "$SMOKE/Murmur.app"
 mv .build .build.release-smoke
 trap 'mv .build.release-smoke .build 2>/dev/null || true' EXIT
-if ! "$APP/Contents/MacOS/Murmur" render-ui "$SMOKE" >"$SMOKE/log" 2>&1 || ! ls "$SMOKE"/*.png >/dev/null 2>&1; then
+if ! "$SMOKE/Murmur.app/Contents/MacOS/Murmur" render-ui "$SMOKE" >"$SMOKE/log" 2>&1 || ! ls "$SMOKE"/*.png >/dev/null 2>&1; then
   mv .build.release-smoke .build
   die "the built app does not launch without this checkout's .build directory" "$(tail -3 "$SMOKE/log")"
 fi
 mv .build.release-smoke .build
 trap - EXIT
 [ "$DRY_RUN" = "1" ] && trap 'git checkout -- Scripts/bundle.sh site/index.html 2>/dev/null || true' EXIT
+rm -rf "$SMOKE"
 echo "  launches and renders without .build"
 
 rm -rf "$DIST" && mkdir -p "$DIST"

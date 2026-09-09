@@ -32,6 +32,15 @@ generated from commits.
   developer.apple.com. Signing keeps working throughout, which is why the script
   checks notarisation before building rather than after.
 
+- **The built app must never be launched before it is stapled.** Launching tags the
+  bundle with `com.apple.provenance`, which cannot be removed, and stapler then fails
+  with error 73 ("could not remove existing ticket"). The launch gate therefore runs a
+  `ditto` copy of the app in a temp dir, never the real one.
+- **The launch gate exists because of 0.8.0.** SwiftPM's `Bundle.module` accessor falls
+  back to an absolute path into this checkout's `.build`, so a resource lookup that only
+  works because of it passes every local test and crashes at launch everywhere else.
+  The gate hides `.build` and requires the built app to render its UI.
+
 ## One-time setup on a new machine
 
 ```bash
