@@ -36,13 +36,14 @@ enum RenderPreview {
                         fileURL: state.transcriptFolder.appendingPathComponent("Meeting 2026-09-09 14.03.md"),
                         segments: 23, lastSavedAt: Date().addingTimeInterval(-12))
                 }
-                if name == "ready" { state.hotKey = .rightOption }
+                if name == "ready" { state.hotKey = .leftOption; state.meetingKey = .rightOption }
                 if name == "ready" {
                     state.checkForUpdates = true
                     state.updateStatus = .checked(Date().addingTimeInterval(-7200))
                     state.availableUpdate = UpdateInfo(
                         version: "0.9.0",
-                        url: URL(string: "https://github.com/justynroberts/murmur/releases/latest")!)
+                        url: URL(string: "https://github.com/justynroberts/murmur/releases/latest")!,
+                        downloadURL: nil, downloadSize: nil)
                 }
                 recent.forEach { state.record($0) }
 

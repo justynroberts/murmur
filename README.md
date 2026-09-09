@@ -4,10 +4,10 @@
   <p><strong>Offline push-to-talk dictation for macOS.</strong></p>
 </div>
 
-Hold **Right Option** (or another modifier of your choosing), speak, release —
+Hold **Left Option** (or another modifier of your choosing), speak, release —
 cleaned-up text appears in whatever app you were typing in.
 
-Tap **Right Control** and Murmur goes into meeting mode: it records until you tap
+Tap **Right Option** and Murmur goes into meeting mode: it records until you tap
 again and saves the transcript as a Markdown file in `~/Documents/Murmur`, written
 segment by segment so a crash or a flat battery loses nothing that was heard.
 
@@ -50,8 +50,8 @@ without a Gatekeeper warning.
 ## How it works
 
 ```
-Right Option held    →  CGEventTap  →  AVAudioEngine @ 16kHz
-Right Option released →  Parakeet TDT v2 (CoreML)  →  rule-based cleanup
+Left Option held     →  CGEventTap  →  AVAudioEngine @ 16kHz
+Left Option released →  Parakeet TDT v2 (CoreML)  →  rule-based cleanup
                       →  pasteboard + Cmd-V into the frontmost app
 ```
 

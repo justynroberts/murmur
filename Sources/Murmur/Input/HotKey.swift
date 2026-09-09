@@ -11,7 +11,10 @@ import Foundation
 enum HotKey: String, CaseIterable, Identifiable {
     case rightOption, leftOption, rightCommand, rightControl, leftControl
 
-    static let `default`: HotKey = .rightOption
+    /// Left to hold, right to tap: both under the thumbs, and neither is
+    /// claimed by much else.
+    static let `default`: HotKey = .leftOption
+    static let defaultMeeting: HotKey = .rightOption
 
     var id: String { rawValue }
 

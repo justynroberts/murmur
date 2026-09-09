@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import ServiceManagement
 import SwiftUI
@@ -89,7 +90,7 @@ final class AppState: ObservableObject {
     // MARK: Meeting mode — see MeetingRecorder.
 
     /// Tapped to start and stop meeting mode. Must differ from `hotKey`.
-    @Published var meetingKey: HotKey = .rightControl {
+    @Published var meetingKey: HotKey = HotKey.defaultMeeting {
         didSet { UserDefaults.standard.set(meetingKey.rawValue, forKey: "meetingKey") }
     }
     /// Where session transcripts go. Defaults to ~/Documents/Murmur.
@@ -115,6 +116,27 @@ final class AppState: ObservableObject {
     }
     @Published var availableUpdate: UpdateInfo?
     @Published var updateStatus: UpdateStatus = .idle
+    /// Non-nil while the installer is running. See UpdateInstaller.
+    @Published var updateStep: UpdateInstaller.Step?
+
+    /// Downloads, verifies, installs and relaunches. Refuses during a meeting:
+    /// the relaunch would cut the recording.
+    func installUpdate() {
+        guard let update = availableUpdate, updateStep == nil else { return }
+        guard meeting == nil else {
+            updateStep = .failed("Stop the meeting first, then update.")
+            return
+        }
+        Task { @MainActor in
+            do {
+                try await UpdateInstaller.install(update) { [weak self] in self?.updateStep = $0 }
+            } catch {
+                // Fall back to the disk image in Finder: the user can drag it.
+                if let dmg = update.downloadURL { NSWorkspace.shared.open(dmg) }
+                updateStep = .failed("\(error.localizedDescription) Opening the download so you can install it yourself.")
+            }
+        }
+    }
     /// Set by `UpdateChecker`; the "Check now" button calls it.
     var requestUpdateCheck: (() -> Void)?
 

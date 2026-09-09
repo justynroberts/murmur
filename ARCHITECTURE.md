@@ -5,7 +5,7 @@ you. Read this before changing anything.
 
 ## What this is
 
-Murmur — offline push-to-talk dictation for macOS. Hold Right Option, speak, release,
+Murmur — offline push-to-talk dictation for macOS. Hold Left Option, speak, release,
 and cleaned-up text lands in whatever app has focus. A free replacement for
 Wispr Flow (~$15/mo) and superwhisper (~$84/yr).
 
@@ -152,7 +152,9 @@ showing it is required — the status item has no window until the run loop turn
 
 ## Meeting mode
 
-The second key. Tap it (press and release, nothing else in between) and Murmur records
+The second key, Right Option by default (Left Option is the hold-to-dictate default: left
+to hold, right to tap, both under the thumbs). Tap it (press and release, nothing else in
+between) and Murmur records
 continuously, transcribing as it goes, until you tap again. Nothing is pasted anywhere;
 the output is one Markdown file per session in the transcript folder (default
 `~/Documents/Murmur`, changeable in Settings), named `Meeting 2026-09-09 14.03.md`, with
@@ -258,6 +260,13 @@ rarer spelling on its own.
   the real status on launch rather than trusting a stored flag, because the user can
   remove the item in System Settings. It only works from inside `Murmur.app`; the bare
   binary reports not registered.
+- **Updating is a real install.** `UpdateInstaller` downloads the disk image, mounts it,
+  validates the new bundle's signature with `SecStaticCodeCheckValidity` and requires its
+  Team ID to equal the running bundle's (an ad-hoc dev build has none, so it can never
+  auto-install), copies it in beside the current bundle with `ditto`, swaps by two renames,
+  then relaunches via `open`. Refused during a meeting. Any failure opens the disk image in
+  Finder instead. `Murmur.app/Contents/MacOS/Murmur selfupdate` runs it headlessly on
+  whatever bundle it is inside — use a scratch copy.
 - **Update checks are opt-in and narrow.** `UpdateChecker` runs only while
   `AppState.checkForUpdates` is on: immediately on switching on (the user just consented
   and wants to see it work), then hourly it asks whether 24h have passed since

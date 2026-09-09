@@ -439,8 +439,9 @@ footer a:hover { text-decoration: underline; }
       <pre><b>swift run</b> Murmur selftest test_short.wav --offline</pre>
       <p style="margin:16px 0 0">
         The one exception is yours to switch on. <strong>Check for updates</strong>, off by default,
-        asks GitHub for the latest version number once a day and sends nothing else. Leave it off and
-        Murmur never makes a network request again.
+        asks GitHub for the latest version number once a day and sends nothing else. Press Update and it
+        downloads the new version, checks it carries the same Developer ID signature, installs it and
+        relaunches. Leave the switch off and Murmur never makes a network request again.
       </p>
     </div>
   </section>
@@ -487,11 +488,11 @@ footer a:hover { text-decoration: underline; }
     <h2>Two keys</h2>
     <div class="panel">
       <p>
-        <strong>Hold one to dictate.</strong> Right Option by default. Speak, release, and the text
+        <strong>Hold one to dictate.</strong> Left Option by default. Speak, release, and the text
         lands where your cursor is. Nothing is saved.
       </p>
       <p>
-        <strong>Tap the other for a meeting.</strong> Right Control by default. Murmur records until you
+        <strong>Tap the other for a meeting.</strong> Right Option by default. Murmur records until you
         tap again and writes the transcript to a Markdown file in a folder you choose — one file per
         session, start time in the header, end time in the footer. It is written segment by segment,
         and audio for the segment in progress is spooled to disk until its words are safely down, so a
@@ -543,8 +544,8 @@ footer a:hover { text-decoration: underline; }
           network is locked off, unless you switch on update checks.
         </li>
         <li>
-          <strong>Hold <kbd>⌥</kbd> right Option, speak, release.</strong> Text appears wherever the
-          cursor is. Tap <kbd>⌃</kbd> right Control for meeting mode. Click the menu bar icon to see
+          <strong>Hold left <kbd>⌥</kbd>, speak, release.</strong> Text appears wherever the
+          cursor is. Tap right <kbd>⌥</kbd> for meeting mode. Click the menu bar icon to see
           recent dictations, the word list, and the meeting transcript folder.
         </li>
       </ol>

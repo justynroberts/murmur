@@ -346,17 +346,27 @@ struct PopoverView: View {
                 .foregroundStyle(Tokens.gradient)
             VStack(alignment: .leading, spacing: 1) {
                 label("Murmur \(update.version) is available", Tokens.text(scheme), size: 12, weight: .semibold)
-                label("You have \(Bundle.main.appVersion). Opens the release page in your browser.",
-                      Tokens.text3(scheme), size: 10)
+                if case .failed(let why)? = state.updateStep {
+                    label(why, Tokens.coral, size: 10)
+                } else {
+                    label("You have \(Bundle.main.appVersion). Downloads, verifies the signature, installs and relaunches.",
+                          Tokens.text3(scheme), size: 10)
+                }
             }
             Spacer(minLength: 6)
-            Button("Get it") { NSWorkspace.shared.open(update.url) }
-                .buttonStyle(.plain)
-                .font(Fonts.display(11, .semibold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 12).padding(.vertical, 5)
-                .background(Capsule().fill(Tokens.gradient))
-                .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
+            if let step = state.updateStep, step != .failed("") , !isFailure(step) {
+                Text(stepText(step))
+                    .font(Fonts.mono(10))
+                    .foregroundStyle(Tokens.accent(scheme))
+            } else {
+                Button("Update") { state.installUpdate() }
+                    .buttonStyle(.plain)
+                    .font(Fonts.display(11, .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12).padding(.vertical, 5)
+                    .background(Capsule().fill(Tokens.gradient))
+                    .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
+            }
         }
         .padding(11)
         .background(
@@ -459,6 +469,21 @@ struct PopoverView: View {
         .transition(.blurIn)
     }
 
+    private func isFailure(_ step: UpdateInstaller.Step) -> Bool {
+        if case .failed = step { return true }
+        return false
+    }
+
+    private func stepText(_ step: UpdateInstaller.Step) -> String {
+        switch step {
+        case .downloading(let f): return f.map { "Downloading \(Int($0 * 100))%" } ?? "Downloading…"
+        case .verifying:          return "Verifying…"
+        case .installing:         return "Installing…"
+        case .relaunching:        return "Relaunching…"
+        case .failed:             return ""
+        }
+    }
+
     private func elapsed(since start: Date, now: Date) -> String {
         let s = max(0, Int(now.timeIntervalSince(start)))
         return s >= 3600 ? String(format: "%d:%02d:%02d", s / 3600, s % 3600 / 60, s % 60)
@@ -533,7 +558,7 @@ struct PopoverView: View {
                 linkButton("Website", "https://justynroberts.github.io/murmur/")
                 linkButton("Releases", "https://github.com/justynroberts/murmur/releases")
             }
-            Text("Murmur only checks for updates if you switch that on in Settings.")
+            Text("Murmur only checks for updates if you switch that on in Settings, and only downloads one when you press Update.")
                 .font(Fonts.display(10))
                 .foregroundStyle(Tokens.text3(scheme))
                 .multilineTextAlignment(.center)

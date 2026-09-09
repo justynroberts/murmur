@@ -3,7 +3,11 @@ import Foundation
 
 struct UpdateInfo: Equatable {
     let version: String
+    /// The release page, for the browser.
     let url: URL
+    /// The disk image, for the in-app installer. Nil if the release has none.
+    let downloadURL: URL?
+    let downloadSize: Int?
 }
 
 /// Asks GitHub for the newest release tag. **Opt-in only.** It never runs
@@ -107,7 +111,12 @@ final class UpdateChecker {
               let url = URL(string: page)
         else { throw UpdateError.badResponse }
 
-        return UpdateInfo(version: tag.hasPrefix("v") ? String(tag.dropFirst()) : tag, url: url)
+        let assets = json["assets"] as? [[String: Any]] ?? []
+        let dmg = assets.first { ($0["name"] as? String)?.hasSuffix(".dmg") == true }
+        return UpdateInfo(version: tag.hasPrefix("v") ? String(tag.dropFirst()) : tag,
+                          url: url,
+                          downloadURL: (dmg?["browser_download_url"] as? String).flatMap(URL.init),
+                          downloadSize: dmg?["size"] as? Int)
     }
 
     /// Numeric, component-wise. "dev" (the bare binary) parses to zero, so

@@ -14,6 +14,29 @@ if CommandLine.arguments.count > 1, CommandLine.arguments[1] == "cleantest" {
     exit(CleanerTest.run())
 }
 
+/// `Murmur.app/Contents/MacOS/Murmur selfupdate` runs the installer headlessly
+/// against the latest release, without relaunching. It replaces the bundle it
+/// is run from, so run it on a scratch copy.
+if CommandLine.arguments.count > 1, CommandLine.arguments[1] == "selfupdate" {
+    var done = false
+    Task { @MainActor in
+        do {
+            print("bundle:  \(Bundle.main.bundleURL.path)  v\(Bundle.main.appVersion)")
+            print("team:    \(try UpdateInstaller.teamIdentifier(of: Bundle.main.bundleURL))")
+            let info = try await UpdateChecker.fetchLatest()
+            print("latest:  \(info.version)")
+            try await UpdateInstaller.install(info, relaunch: false) { step in print("  \(step)") }
+            print("installed \(info.version) over \(Bundle.main.bundleURL.lastPathComponent)")
+        } catch {
+            print("selfupdate failed: \(error.localizedDescription)")
+            exit(1)
+        }
+        done = true
+    }
+    while !done { RunLoop.main.run(mode: .default, before: Date(timeIntervalSinceNow: 0.05)) }
+    exit(0)
+}
+
 /// `murmur meetingtest` drives meeting mode end to end without a microphone:
 /// the segmenter on synthetic audio, a WAV through the real pipeline into a
 /// scratch folder, and recovery of a spool left by a simulated crash.
@@ -44,6 +67,7 @@ if CommandLine.arguments.count > 1, CommandLine.arguments[1] == "updatecheck" {
             let info = try await UpdateChecker.fetchLatest()
             let current = Bundle.main.appVersion
             print("latest:  \(info.version)  \(info.url)")
+            print("dmg:     \(info.downloadURL?.absoluteString ?? "none")  \(info.downloadSize ?? 0) bytes")
             print("current: \(current)")
             print(UpdateChecker.isNewer(info.version, than: current) ? "update available" : "up to date")
         } catch {

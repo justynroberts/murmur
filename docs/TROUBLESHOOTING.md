@@ -3,7 +3,8 @@
 ## Nothing happens when I hold the key
 
 First check which key it is: the panel shows it under Ready, and Settings lets you
-pick a different modifier if your keyboard has no Right Option.
+pick a different modifier if your keyboard lacks the one chosen. The defaults are
+Left Option to hold and dictate, Right Option to tap for meeting mode.
 
 Almost always Accessibility permission. Murmur needs it twice over — to watch for
 the hotkey and to insert text.
