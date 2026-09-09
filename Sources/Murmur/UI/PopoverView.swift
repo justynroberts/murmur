@@ -28,6 +28,7 @@ struct PopoverView: View {
         VStack(alignment: .leading, spacing: 14) {
             header
             statusCard
+            if let meeting = state.meeting { meetingCard(meeting) }
             if let update = state.availableUpdate { updateCard(update) }
             if !state.recent.isEmpty { recentList }
             settings
@@ -238,9 +239,47 @@ struct PopoverView: View {
                 label("Hold to dictate", Tokens.text2(scheme), size: 11.5)
                 HStack(spacing: 5) {
                     ForEach(HotKey.allCases) { key in
-                        keyChip(key)
+                        keyChip(key, selection: $state.hotKey, taken: state.meetingKey)
                     }
                 }
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                label("Tap for meeting mode", Tokens.text2(scheme), size: 11.5)
+                HStack(spacing: 5) {
+                    ForEach(HotKey.allCases) { key in
+                        keyChip(key, selection: $state.meetingKey, taken: state.hotKey)
+                    }
+                }
+                label("Records until you tap again and saves the transcript as a file. Audio is never kept.",
+                      Tokens.text3(scheme), size: 9.5)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    label("Transcripts", Tokens.text2(scheme), size: 11.5)
+                    Spacer()
+                    Button("Open") { NSWorkspace.shared.open(state.transcriptFolder) }
+                        .buttonStyle(.plain)
+                        .font(Fonts.display(10, .medium))
+                        .foregroundStyle(Tokens.accent(scheme))
+                        .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
+                    Button("Change…") { chooseTranscriptFolder() }
+                        .buttonStyle(.plain)
+                        .font(Fonts.display(10, .medium))
+                        .foregroundStyle(Tokens.accent(scheme))
+                        .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
+                }
+                Text(state.transcriptFolder.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
+                    .font(Fonts.mono(9.5))
+                    .foregroundStyle(Tokens.text3(scheme))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+
+            if let note = state.meetingNote {
+                label(note, Tokens.coral, size: 10)
+                    .transition(.blurIn)
             }
 
             HStack {
@@ -331,15 +370,19 @@ struct PopoverView: View {
         .transition(.blurIn)
     }
 
-    private func keyChip(_ key: HotKey) -> some View {
-        let selected = state.hotKey == key
+    /// `taken` is the other mode's key: shown but not selectable, so the two
+    /// can never collide.
+    private func keyChip(_ key: HotKey, selection: Binding<HotKey>, taken: HotKey) -> some View {
+        let selected = selection.wrappedValue == key
+        let disabled = key == taken
         let side = key.name.hasPrefix("Right") ? "R" : "L"
         return Button {
-            withAnimation(.easeOut(duration: 0.18)) { state.hotKey = key }
+            guard !disabled else { return }
+            withAnimation(.easeOut(duration: 0.18)) { selection.wrappedValue = key }
         } label: {
             Text("\(side) \(key.symbol)")
                 .font(Fonts.mono(10))
-                .foregroundStyle(selected ? Color.white : Tokens.text(scheme))
+                .foregroundStyle(selected ? Color.white : Tokens.text(scheme).opacity(disabled ? 0.35 : 1))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 5)
                 .background(
@@ -355,8 +398,79 @@ struct PopoverView: View {
         .buttonStyle(.plain)
         .accessibilityLabel(key.name)
         .accessibilityAddTraits(selected ? .isSelected : [])
-        .help(key.name)
-        .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
+        .help(disabled ? "\(key.name) is the other mode's key" : key.name)
+        .onHover { $0 && !disabled ? NSCursor.pointingHand.push() : NSCursor.pop() }
+    }
+
+    private func chooseTranscriptFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.canCreateDirectories = true
+        panel.directoryURL = state.transcriptFolder
+        panel.prompt = "Use this folder"
+        panel.message = "Meeting transcripts will be saved here."
+        NSApp.activate(ignoringOtherApps: true)
+        if panel.runModal() == .OK, let url = panel.url {
+            state.transcriptFolder = url
+        }
+    }
+
+    // MARK: - Meeting
+
+    private func meetingCard(_ meeting: MeetingRecorder.Session) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 7) {
+                Circle().fill(Tokens.coral).frame(width: 7, height: 7)
+                label("Meeting mode", Tokens.text(scheme), weight: .semibold)
+                Spacer()
+                TimelineView(.periodic(from: meeting.startedAt, by: 1)) { context in
+                    Text(elapsed(since: meeting.startedAt, now: context.date))
+                        .font(Fonts.mono(11))
+                        .foregroundStyle(Tokens.coral)
+                }
+            }
+            label(meetingSavedLine(meeting), Tokens.text3(scheme), size: 10.5)
+            HStack(spacing: 10) {
+                Button("Open transcript") { NSWorkspace.shared.open(meeting.fileURL) }
+                    .buttonStyle(.plain)
+                    .font(Fonts.display(11, .medium))
+                    .foregroundStyle(Tokens.accent(scheme))
+                    .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
+                Spacer()
+                Button("Stop") { state.requestMeetingStop?() }
+                    .buttonStyle(.plain)
+                    .font(Fonts.display(11, .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12).padding(.vertical, 5)
+                    .background(Capsule().fill(Tokens.coral))
+                    .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
+            }
+        }
+        .padding(13)
+        .background(
+            RoundedRectangle(cornerRadius: Tokens.rPanel, style: .continuous)
+                .fill(Tokens.raised(scheme).opacity(scheme == .dark ? 0.7 : 1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Tokens.rPanel, style: .continuous)
+                        .strokeBorder(Tokens.coral.opacity(0.6))
+                )
+        )
+        .transition(.blurIn)
+    }
+
+    private func elapsed(since start: Date, now: Date) -> String {
+        let s = max(0, Int(now.timeIntervalSince(start)))
+        return s >= 3600 ? String(format: "%d:%02d:%02d", s / 3600, s % 3600 / 60, s % 60)
+                         : String(format: "%02d:%02d", s / 60, s % 60)
+    }
+
+    private func meetingSavedLine(_ m: MeetingRecorder.Session) -> String {
+        let name = m.fileURL.lastPathComponent
+        guard let saved = m.lastSavedAt else { return "Listening · \(name)" }
+        let ago = Int(Date().timeIntervalSince(saved))
+        let when = ago < 5 ? "just now" : "\(ago)s ago"
+        return "\(m.segments) segment\(m.segments == 1 ? "" : "s") saved, last \(when) · \(name)"
     }
 
     private func pillSwitch(isOn: Binding<Bool>, label: String) -> some View {

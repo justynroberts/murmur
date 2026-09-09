@@ -7,6 +7,10 @@
 Hold **Right Option** (or another modifier of your choosing), speak, release —
 cleaned-up text appears in whatever app you were typing in.
 
+Tap **Right Control** and Murmur goes into meeting mode: it records until you tap
+again and saves the transcript as a Markdown file in `~/Documents/Murmur`, written
+segment by segment so a crash or a flat battery loses nothing that was heard.
+
 Nothing leaves your Mac. No account, no subscription, no network access after the
 one-time model download — unless you switch on the optional update check, which asks
 GitHub for the latest version number once a day and sends nothing else.

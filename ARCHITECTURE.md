@@ -32,6 +32,8 @@ swift run Murmur selftest test_short.wav             # exercise the ASR path wit
 swift run Murmur selftest test_short.wav --offline   # same, with the network refused for the whole run
 swift run Murmur render-ui <dir>         # render the popover to PNGs (light/dark × setup/ready/active)
 swift run Murmur updatecheck             # one request to the releases API; prints latest vs this build
+swift run Murmur meetingtest             # segmenter, a WAV through meeting mode, and spool recovery
+swift run Murmur meeting start|stop|toggle   # drive meeting mode in the running app
 ```
 
 There is no XCTest target. `cleantest` is the test suite — a table of
@@ -148,6 +150,47 @@ The popover is shown automatically on first launch (`hasLaunchedBefore` in
 UserDefaults) so model download does not look like a hang. The 0.4s delay before
 showing it is required — the status item has no window until the run loop turns.
 
+## Meeting mode
+
+The second key. Tap it (press and release, nothing else in between) and Murmur records
+continuously, transcribing as it goes, until you tap again. Nothing is pasted anywhere;
+the output is one Markdown file per session in the transcript folder (default
+`~/Documents/Murmur`, changeable in Settings), named `Meeting 2026-09-09 14.03.md`, with
+the start time in the header and the end time, duration and segment count in a footer.
+No per-line clock stamps — that was a deliberate choice. Dictation never writes a file.
+
+`MeetingRecorder` owns it. The pieces, and why:
+
+- **Its own `AudioCapture`** with `onSamples` set, so meeting audio streams straight to
+  the recorder while dictation keeps its own engine and buffer. Both work at once; the
+  `Transcriber` actor serialises them.
+- **`Segmenter`** is pure logic with an injected clock. A segment closes on 1.5s of
+  silence after at least 2s with speech in it, or at 30s regardless. Speech is an RMS
+  gate at 0.012; a window with none is dropped, so a quiet hour writes nothing.
+- **Segments are transcribed in order** through a chained `Task` — a slow one never lets
+  a later one overtake it — and each is appended and `synchronize()`d the moment it
+  lands. The footer is queued behind the last segment so the file ends with its words.
+- **The spool is what survives a power cut.** Every chunk is also appended to
+  `~/Library/Application Support/Murmur/spool/<session>__<epoch>.pcm` as it arrives; the
+  file is deleted only after its transcript is on disk. A 60s timer forces both spool
+  and transcript to disk on top of that. On launch, after models load, `recover()`
+  transcribes any spool left behind and appends it to its session file under a
+  "Recovered after an interruption" heading. So the most a crash can lose is the audio
+  the OS had not yet flushed, a second or so. Audio is otherwise never kept.
+- **A tap is not a shortcut.** `HotKeyMonitor` watches `keyDown` as well as
+  `flagsChanged` and spoils the tap if any key is pressed while the modifier is held, so
+  Ctrl-C on Left Control does not start a recording. A modifier pressed while another
+  watched one is held is a chord, also not a tap.
+- **Stops on sleep and on quit**, and does not resume by itself. Better a gap than a
+  transcript of a room nobody meant to record. The menu bar icon is a coral record
+  glyph the whole time it is on.
+- **Scriptable**: `Murmur meeting start|stop|toggle` posts a distributed notification the
+  running app acts on, so a calendar hook or Shortcut can drive it.
+
+`swift run Murmur meetingtest` covers all of it without a microphone: segmenter cuts on
+synthetic audio, a WAV through the real recorder into a scratch folder (file, header,
+words, footer, spool emptied), and recovery of a planted spool.
+
 ## Filler stripping
 
 `RuleCleaner` matches vocal noises as regex patterns, not a word list, so elongations
@@ -203,7 +246,9 @@ rarer spelling on its own.
   for context does not. Do not build features that assume AX context is available.
 - The event tap gets disabled by the system on timeout; `HotKeyMonitor` re-arms it.
 - `flagsChanged` carries no up/down bit — key state is inferred from whether the
-  chosen modifier's flag survived the event.
+  chosen modifier's *device-specific* flag (NX_DEVICER…/NX_DEVICEL…) survived the event.
+  The generic `.maskAlternate` cannot tell Right Option from Left, and with two keys in
+  use that matters.
 - **The hotkey is a modifier, chosen from `HotKey`** and persisted in UserDefaults.
   Fn/Globe is excluded because a bare press fires the system emoji or dictation
   action on release; Shift because holding it is how capitals happen. The monitor

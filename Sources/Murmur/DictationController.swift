@@ -11,6 +11,9 @@ final class DictationController {
     private let audio = AudioCapture()
     private let transcriber = Transcriber()
     private let state: AppState
+    /// Meeting mode shares the transcriber, so its segments and dictations
+    /// queue through the same actor instead of racing for the Neural Engine.
+    let meeting: MeetingRecorder
 
     private var isRecording = false
     private var pressedAt: CFAbsoluteTime = 0
@@ -27,10 +30,12 @@ final class DictationController {
 
     init(state: AppState) {
         self.state = state
-        hotKey.key = state.hotKey
-        state.$hotKey
-            .removeDuplicates()
-            .sink { [weak self] in self?.hotKey.key = $0 }
+        self.meeting = MeetingRecorder(state: state, transcriber: transcriber)
+        state.requestMeetingStop = { [weak self] in self?.meeting.stop(reason: "stopped") }
+        hotKey.keys = [state.hotKey, state.meetingKey]
+        state.$hotKey.combineLatest(state.$meetingKey)
+            .removeDuplicates { $0 == $1 }
+            .sink { [weak self] dictate, meet in self?.hotKey.keys = [dictate, meet] }
             .store(in: &cancellables)
     }
 
@@ -50,8 +55,18 @@ final class DictationController {
 
         // Arm the hotkey *before* the models load, so a first-run user can already
         // speak; the audio is queued and transcribed the moment setup finishes.
-        hotKey.onPress = { [weak self] in self?.beginRecording() }
-        hotKey.onRelease = { [weak self] in self?.endRecording() }
+        hotKey.onPress = { [weak self] key in
+            guard let self, key == self.state.hotKey else { return }
+            self.beginRecording()
+        }
+        hotKey.onRelease = { [weak self] key in
+            guard let self, key == self.state.hotKey else { return }
+            self.endRecording()
+        }
+        hotKey.onTap = { [weak self] key in
+            guard let self, key == self.state.meetingKey else { return }
+            self.meeting.toggle()
+        }
         do {
             try hotKey.start()
         } catch {

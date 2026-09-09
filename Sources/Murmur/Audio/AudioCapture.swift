@@ -10,6 +10,11 @@ final class AudioCapture {
     private var samples: [Float] = []
     private let lock = NSLock()
 
+    /// When set, converted samples are handed here as they arrive (on the audio
+    /// thread) instead of being accumulated. Meeting mode uses this; dictation
+    /// uses the buffer. Each mode has its own instance and its own engine.
+    var onSamples: (([Float]) -> Void)?
+
     private let targetFormat = AVAudioFormat(
         commonFormat: .pcmFormatFloat32,
         sampleRate: 16_000,
@@ -73,8 +78,13 @@ final class AudioCapture {
         let frames = Int(out.frameLength)
         guard frames > 0 else { return }
 
+        let chunk = Array(UnsafeBufferPointer(start: channel, count: frames))
+        if let onSamples {
+            onSamples(chunk)
+            return
+        }
         lock.lock()
-        samples.append(contentsOf: UnsafeBufferPointer(start: channel, count: frames))
+        samples.append(contentsOf: chunk)
         lock.unlock()
     }
 }

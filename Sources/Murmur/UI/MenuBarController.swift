@@ -31,7 +31,7 @@ final class MenuBarController {
             .receive(on: RunLoop.main)
             .sink { [weak self] in self?.render($0) }
             .store(in: &cancellables)
-        state.$hotKey
+        state.$hotKey.map { _ in () }.merge(with: state.$meeting.map { _ in () })
             .dropFirst()
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in self.map { $0.render($0.state.phase) } }
@@ -50,6 +50,10 @@ final class MenuBarController {
         case .starting, .settingUp:
             symbol = "waveform.badge.exclamationmark"
             tint = .secondaryLabelColor
+        case .ready where state.meeting != nil:
+            // Meeting mode is never silent in the menu bar.
+            symbol = "record.circle"
+            tint = NSColor(red: 0.910, green: 0.380, blue: 0.373, alpha: 1)
         case .ready:
             symbol = "waveform"
         case .recording:
@@ -70,6 +74,8 @@ final class MenuBarController {
 
         switch phase {
         case .settingUp(let detail, _): button.toolTip = "Murmur — \(detail)"
+        case .ready where state.meeting != nil:
+            button.toolTip = "Murmur — meeting mode is recording; tap \(state.meetingKey.name) to stop"
         case .ready:                    button.toolTip = "Murmur — hold \(state.hotKey.name) to dictate"
         case .recording:                button.toolTip = "Murmur — recording"
         case .failed(let message):      button.toolTip = "Murmur — \(message)"

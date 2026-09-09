@@ -14,6 +14,26 @@ if CommandLine.arguments.count > 1, CommandLine.arguments[1] == "cleantest" {
     exit(CleanerTest.run())
 }
 
+/// `murmur meetingtest` drives meeting mode end to end without a microphone:
+/// the segmenter on synthetic audio, a WAV through the real pipeline into a
+/// scratch folder, and recovery of a spool left by a simulated crash.
+if CommandLine.arguments.count > 1, CommandLine.arguments[1] == "meetingtest" {
+    exit(MainActor.assumeIsolated { MeetingTest.run() })
+}
+
+/// `murmur meeting start|stop|toggle` tells the running app what to do, via a
+/// distributed notification. Scriptable from Shortcuts or a calendar hook.
+if CommandLine.arguments.count > 2, CommandLine.arguments[1] == "meeting" {
+    let action = CommandLine.arguments[2]
+    guard ["start", "stop", "toggle"].contains(action) else {
+        print("usage: Murmur meeting start|stop|toggle"); exit(2)
+    }
+    DistributedNotificationCenter.default().postNotificationName(
+        MeetingRecorder.notificationName, object: action, userInfo: nil, deliverImmediately: true)
+    print("sent \(action)")
+    exit(0)
+}
+
 /// `murmur updatecheck` exercises the opt-in update path headlessly: one
 /// request, prints what came back and whether it is newer than this build.
 if CommandLine.arguments.count > 1, CommandLine.arguments[1] == "updatecheck" {
@@ -109,6 +129,10 @@ func loadSamples(at path: String) throws -> [Float] {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationWillTerminate(_ notification: Notification) {
+        dictation?.meeting.stop(reason: "Murmur quit")
+    }
+
     private var menuBar: MenuBarController?
     private var dictation: DictationController?
     private var updater: UpdateChecker?
@@ -134,7 +158,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        Task { await dictation.boot() }
+        Task {
+            await dictation.boot()
+            // Anything a crash or power cut left in the spool is transcribed
+            // and appended to its session file before the user does anything.
+            let recovered = await dictation.meeting.recover()
+            if recovered > 0 {
+                state.meetingNote = "Recovered \(recovered) meeting segment\(recovered == 1 ? "" : "s") from the last run."
+            }
+        }
+
+        // Meeting mode stops on sleep and on quit, and does not resume on its
+        // own: better a gap than a transcript of a room nobody meant to record.
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.willSleepNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.dictation?.meeting.stop(reason: "Mac went to sleep") }
+        }
+        DistributedNotificationCenter.default().addObserver(
+            forName: MeetingRecorder.notificationName, object: nil, queue: .main
+        ) { [weak self] note in
+            MainActor.assumeIsolated {
+                guard let meeting = self?.dictation?.meeting else { return }
+                switch note.object as? String {
+                case "start":  meeting.start()
+                case "stop":   meeting.stop(reason: "stopped")
+                default:       meeting.toggle()
+                }
+            }
+        }
 
         // Does nothing unless the user has switched update checks on.
         let updater = UpdateChecker(state: state)

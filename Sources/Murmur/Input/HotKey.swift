@@ -26,14 +26,23 @@ enum HotKey: String, CaseIterable, Identifiable {
         }
     }
 
-    /// `flagsChanged` carries no up/down bit; the key is down iff its modifier
-    /// flag survived the event.
-    var flag: CGEventFlags {
+    /// `flagsChanged` carries no up/down bit; the key is down iff its flag
+    /// survived the event. These are the device-specific masks (NX_DEVICE*),
+    /// which tell left from right — `.maskAlternate` alone would report Right
+    /// Option still down while Left Option is held, and two keys are now in
+    /// use at once.
+    var deviceFlag: UInt64 {
         switch self {
-        case .rightOption, .leftOption:   return .maskAlternate
-        case .rightCommand:               return .maskCommand
-        case .rightControl, .leftControl: return .maskControl
+        case .rightOption:  return 0x0040   // NX_DEVICERALTKEYMASK
+        case .leftOption:   return 0x0020   // NX_DEVICELALTKEYMASK
+        case .rightCommand: return 0x0010   // NX_DEVICERCMDKEYMASK
+        case .rightControl: return 0x2000   // NX_DEVICERCTLKEYMASK
+        case .leftControl:  return 0x0001   // NX_DEVICELCTLKEYMASK
         }
+    }
+
+    func isDown(in flags: CGEventFlags) -> Bool {
+        flags.rawValue & deviceFlag != 0
     }
 
     var name: String {

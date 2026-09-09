@@ -26,9 +26,17 @@ enum RenderPreview {
                 let state = AppState()
                 state.theme = scheme
                 state.phase = phase
+                state.transcriptFolder = AppState.defaultTranscriptFolder
                 state.hotKey = .default   // the bare binary's defaults persist between runs
                 // Vary the settings across cases so every control state is drawn.
-                if name == "active" { state.hotKey = .rightCommand; state.previewLaunchAtLogin(true) }
+                if name == "active" {
+                    state.hotKey = .rightCommand; state.previewLaunchAtLogin(true)
+                    state.meeting = MeetingRecorder.Session(
+                        startedAt: Date().addingTimeInterval(-754),
+                        fileURL: state.transcriptFolder.appendingPathComponent("Meeting 2026-09-09 14.03.md"),
+                        segments: 23, lastSavedAt: Date().addingTimeInterval(-12))
+                }
+                if name == "ready" { state.hotKey = .rightOption }
                 if name == "ready" {
                     state.checkForUpdates = true
                     state.updateStatus = .checked(Date().addingTimeInterval(-7200))

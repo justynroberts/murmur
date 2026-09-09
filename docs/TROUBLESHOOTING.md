@@ -15,6 +15,20 @@ and re-add it. macOS ties the grant to the binary's code signature, so a rebuild
 invalidates it. Always run `Scripts/bundle.sh` after `swift build`; running the bare
 executable from `.build/` will fail every time, because a grant needs a bundle ID.
 
+## Meeting mode did not start when I tapped the key
+
+A tap is a press and release with nothing else in between, inside about half a second.
+Holding it, or pressing another key while it is down, is read as a shortcut and ignored
+on purpose. Tap it cleanly. The menu bar icon turns into a coral record glyph while
+meeting mode is on.
+
+## The Mac lost power during a meeting
+
+Nothing spoken is lost. Audio for the segment in progress is spooled to disk as it is
+heard and only deleted once its transcript is written. Open Murmur again: after the
+models load it transcribes whatever was left and appends it to the session file under a
+"Recovered after an interruption" heading, and tells you so in the panel.
+
 ## Text appears nowhere, or an error mentions Secure Input
 
 A password field has focus. When macOS enables Secure Input, no application can

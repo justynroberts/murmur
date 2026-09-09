@@ -86,6 +86,26 @@ final class AppState: ObservableObject {
     @Published var settingsNote: String?
     private var applyingLoginItem = false
 
+    // MARK: Meeting mode — see MeetingRecorder.
+
+    /// Tapped to start and stop meeting mode. Must differ from `hotKey`.
+    @Published var meetingKey: HotKey = .rightControl {
+        didSet { UserDefaults.standard.set(meetingKey.rawValue, forKey: "meetingKey") }
+    }
+    /// Where session transcripts go. Defaults to ~/Documents/Murmur.
+    @Published var transcriptFolder: URL = AppState.defaultTranscriptFolder {
+        didSet { UserDefaults.standard.set(transcriptFolder.path, forKey: "transcriptFolder") }
+    }
+    @Published var meeting: MeetingRecorder.Session?
+    @Published var meetingNote: String?
+    /// Set by `DictationController`; the popover's Stop button calls it.
+    var requestMeetingStop: (() -> Void)?
+
+    static var defaultTranscriptFolder: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("Murmur", isDirectory: true)
+    }
+
     // MARK: Updates — opt-in, off by default. See UpdateChecker.
 
     enum UpdateStatus: Equatable { case idle, checking, checked(Date), failed }
@@ -116,6 +136,13 @@ final class AppState: ObservableObject {
             hotKey = stored
         }
         checkForUpdates = UserDefaults.standard.bool(forKey: "checkForUpdates")
+        if let raw = UserDefaults.standard.string(forKey: "meetingKey"),
+           let stored = HotKey(rawValue: raw), stored != hotKey {
+            meetingKey = stored
+        }
+        if let path = UserDefaults.standard.string(forKey: "transcriptFolder") {
+            transcriptFolder = URL(fileURLWithPath: path, isDirectory: true)
+        }
         // Ask the system rather than trusting a stored flag: the user can remove
         // the login item in System Settings and the switch must show that.
         applyingLoginItem = true
