@@ -10,7 +10,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CONFIG="${1:-debug}"
 APP="$ROOT/Murmur.app"
 BIN="$ROOT/.build/$CONFIG/Murmur"
-VERSION="0.8.2"
+VERSION="0.8.3"
 
 [ -x "$BIN" ] || { echo "Build first: swift build -c $CONFIG"; exit 1; }
 
