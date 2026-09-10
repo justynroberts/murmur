@@ -165,6 +165,15 @@ Grotesque. Every colour has both a light and a dark value; the visual language i
 specified in `DESIGN.md` (Soft-product archetype, blur-in motion signature) and the
 popover must keep the "Made by FintonLabs" affordance.
 
+**The popover does not size itself.** `NSPopover` keeps whatever `contentSize` it had; a
+taller SwiftUI view is centred inside it and clipped top and bottom, so the header is the
+first thing to vanish — which is exactly what three long recent entries did. `MenuBarController`
+sizes it with `host.sizeThatFits` before every show and again on every `objectWillChange`,
+capped to the screen's visible height. Independently, the main page pins header and footer
+and puts the middle in a `ScrollView` only once its measured height exceeds what fits, so
+nothing is ever clipped by a stale size. `Murmur meeting debug-fill-panel` fills the recent
+list with long entries and opens the panel for an on-screen check.
+
 **Setup is a real window** (`SetupWindowController`, `SetupView`), shown on launch until
 it has completed once (`hasCompletedSetup`) and again whenever Accessibility has been taken
 away. It does not depend on the status item: on a notched MacBook with a full menu bar the

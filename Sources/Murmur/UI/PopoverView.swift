@@ -17,6 +17,11 @@ extension AnyTransition {
     }
 }
 
+private struct MiddleHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}
+
 struct PopoverView: View {
     @ObservedObject var state: AppState
     @Environment(\.colorScheme) private var systemScheme
@@ -30,10 +35,15 @@ struct PopoverView: View {
             case .main:
                 VStack(alignment: .leading, spacing: 14) {
                     header
-                    statusCard
-                    if let meeting = state.meeting { meetingCard(meeting) }
-                    if let update = state.availableUpdate { updateCard(update) }
-                    if !state.recent.isEmpty { recentList }
+                    // The middle scrolls only when it would not fit the screen;
+                    // header and footer never leave it. Laid out plain until
+                    // measured, so nothing is ever clipped by a stale size.
+                    if middleHeight > maxMiddleHeight {
+                        ScrollView(.vertical, showsIndicators: false) { middle }
+                            .frame(height: maxMiddleHeight)
+                    } else {
+                        middle
+                    }
                     footer
                 }
                 .transition(.blurIn)
@@ -47,11 +57,31 @@ struct PopoverView: View {
             }
         }
         .padding(16)
-        .frame(width: 340)
+        .frame(width: 340, alignment: .top)
         .background(Tokens.raised(scheme).opacity(scheme == .dark ? 0.5 : 0.6))
         .preferredColorScheme(state.theme.colorScheme)
         .animation(.easeOut(duration: 0.28), value: state.page)
+        .onPreferenceChange(MiddleHeightKey.self) { middleHeight = $0 }
         .sheet(isPresented: $showAbout) { aboutPanel }
+    }
+
+    private var middle: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            statusCard
+            if let meeting = state.meeting { meetingCard(meeting) }
+            if let update = state.availableUpdate { updateCard(update) }
+            if !state.recent.isEmpty { recentList }
+        }
+        .background(GeometryReader { geo in
+            Color.clear.preference(key: MiddleHeightKey.self, value: geo.size.height)
+        })
+    }
+
+    @State private var middleHeight: CGFloat = 0
+    /// Screen height minus menu bar, header, footer and paddings.
+    private var maxMiddleHeight: CGFloat {
+        let screen = (NSScreen.main?.visibleFrame.height ?? 800)
+        return max(160, screen - 24 - 60 - 40 - 32)
     }
 
     // MARK: - Header

@@ -48,7 +48,7 @@ if CommandLine.arguments.count > 1, CommandLine.arguments[1] == "meetingtest" {
 /// distributed notification. Scriptable from Shortcuts or a calendar hook.
 if CommandLine.arguments.count > 2, CommandLine.arguments[1] == "meeting" {
     let action = CommandLine.arguments[2]
-    guard ["start", "stop", "toggle"].contains(action) else {
+    guard ["start", "stop", "toggle", "debug-fill-panel"].contains(action) else {
         print("usage: Murmur meeting start|stop|toggle"); exit(2)
     }
     DistributedNotificationCenter.default().postNotificationName(
@@ -210,6 +210,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 switch note.object as? String {
                 case "start":  meeting.start()
                 case "stop":   meeting.stop(reason: "stopped")
+                case "debug-fill-panel": self?.menuBar?.debugFillAndPresent()
                 default:       meeting.toggle()
                 }
             }

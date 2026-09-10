@@ -8,6 +8,7 @@ final class MenuBarController {
 
     private let statusItem: NSStatusItem
     private let popover = NSPopover()
+    private let host: NSHostingController<PopoverView>
     private let state: AppState
     private var cancellables = Set<AnyCancellable>()
 
@@ -17,8 +18,13 @@ final class MenuBarController {
 
         popover.behavior = .transient
         popover.animates = true
-        popover.contentSize = NSSize(width: 340, height: 260)
-        popover.contentViewController = NSHostingController(rootView: PopoverView(state: state))
+        host = NSHostingController(rootView: PopoverView(state: state))
+        // The popover does not follow SwiftUI's size on its own. Left alone it
+        // keeps the size it had, and a taller view is centred inside it, so the
+        // header is the first thing to vanish. Size it to fit, every change.
+        host.sizingOptions = []
+        popover.contentViewController = host
+        popover.contentSize = fittingSize()
 
         if let button = statusItem.button {
             button.action = #selector(toggle)
@@ -32,11 +38,35 @@ final class MenuBarController {
             .receive(on: RunLoop.main)
             .sink { [weak self] in self?.render($0) }
             .store(in: &cancellables)
+        // Anything that can change the panel's height: resize on the next turn
+        // of the run loop, after SwiftUI has laid the new content out.
+        state.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                DispatchQueue.main.async { self?.resizeToFit() }
+            }
+            .store(in: &cancellables)
         state.$hotKey.map { _ in () }.merge(with: state.$meeting.map { _ in () })
             .dropFirst()
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in self.map { $0.render($0.state.phase) } }
             .store(in: &cancellables)
+    }
+
+    private func fittingSize() -> NSSize {
+        var size = host.sizeThatFits(in: NSSize(width: 340, height: CGFloat.greatestFiniteMagnitude))
+        size.width = 340
+        // Never taller than the screen below the menu bar.
+        if let screen = statusItem.button?.window?.screen ?? NSScreen.main {
+            size.height = min(size.height, screen.visibleFrame.height - 24)
+        }
+        return size
+    }
+
+    private func resizeToFit() {
+        let size = fittingSize()
+        guard abs(size.height - popover.contentSize.height) > 0.5 else { return }
+        popover.contentSize = size
     }
 
     /// The icon carries state on its own, so the popover does not have to be open
@@ -95,8 +125,36 @@ final class MenuBarController {
             popover.performClose(nil)
         } else {
             state.page = .main
+            popover.contentSize = fittingSize()
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKey()
+        }
+    }
+
+    /// Test hook: fills the recent list with long entries and opens the panel,
+    /// so the on-screen size can be checked without dictating three times.
+    func debugFillAndPresent() {
+        // Open first, fill second: the failure mode is content growing while
+        // the panel is already up.
+        presentOnce()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [self] in
+            for i in 1...3 {
+                state.record(Dictation(
+                    text: "Entry \(i): a long dictation that wraps to two lines in the panel so the recent list is as tall as it can get, and then some more words to be sure.",
+                    spoken: 9.5, latency: 0.25, injected: true))
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) { [self] in
+            let frame = popover.contentViewController?.view.window?.frame ?? .zero
+            let screen = NSScreen.main?.visibleFrame ?? .zero
+            let line = String(format: "content=%.0fx%.0f window=%@ screenVisible=%@ shown=%d\n",
+                              popover.contentSize.width, popover.contentSize.height,
+                              NSStringFromRect(frame), NSStringFromRect(screen), popover.isShown ? 1 : 0)
+            NSLog("[murmur] debug-fill-panel %@", line)
+            let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("Murmur/debug-panel.log")
+            try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try? line.write(to: url, atomically: true, encoding: .utf8)
         }
     }
 
@@ -131,6 +189,7 @@ final class MenuBarController {
         state.page = .settings
         if !popover.isShown {
             NSApp.activate(ignoringOtherApps: true)
+            popover.contentSize = fittingSize()
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKey()
         }
@@ -144,6 +203,7 @@ final class MenuBarController {
     func presentOnce() {
         guard let button = statusItem.button, !popover.isShown else { return }
         NSApp.activate(ignoringOtherApps: true)
+        popover.contentSize = fittingSize()
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         popover.contentViewController?.view.window?.makeKey()
     }

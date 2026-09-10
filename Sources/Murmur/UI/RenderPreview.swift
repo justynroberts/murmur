@@ -25,6 +25,11 @@ enum RenderPreview {
             ("permissions", .permissions(accessibility: false, microphone: true), []),
             ("settings", .ready, []),
             ("update", .ready, []),
+            ("crowded", .ready, [
+                Dictation(text: "So the plan for Thursday is to move the retro to the afternoon, invite the platform team, and make sure the budget line for the new hires is on the agenda before finance closes the quarter.", spoken: 12.3, latency: 0.31, injected: true),
+                Dictation(text: "Can you push that fix to staging and let me know when it's live, and while you're there check whether the feature flag for the new onboarding is still off in production.", spoken: 9.8, latency: 0.27, injected: true),
+                Dictation(text: "Reply to Dave: yes to Wednesday, no to the earlier slot, and ask him to send the revised numbers over before the call rather than walking through them live.", spoken: 8.9, latency: 0.24, injected: false),
+            ]),
             ("meeting", .ready, [
                 Dictation(text: "Move the retro to Thursday and invite the platform team.",
                           spoken: 4.1, latency: 0.19, injected: true)
@@ -80,6 +85,12 @@ enum RenderPreview {
                         version: "0.9.0",
                         url: URL(string: "https://github.com/justynroberts/murmur/releases/latest")!,
                         downloadURL: nil, downloadSize: nil)
+                }
+                if name == "crowded" {
+                    state.checkForUpdates = true
+                    state.updateStatus = .checked(Date().addingTimeInterval(-7200))
+                    state.availableUpdate = UpdateInfo(version: "0.9.0", url: URL(string: "https://github.com/justynroberts/murmur/releases/latest")!, downloadURL: nil, downloadSize: nil)
+                    state.meeting = MeetingRecorder.Session(startedAt: Date().addingTimeInterval(-1523), fileURL: state.transcriptFolder.appendingPathComponent("Meeting 2026-09-10 09.00.md"), segments: 41, lastSavedAt: Date().addingTimeInterval(-3))
                 }
                 if name == "meeting" {
                     state.meeting = MeetingRecorder.Session(
