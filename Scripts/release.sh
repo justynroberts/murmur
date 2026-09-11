@@ -91,12 +91,9 @@ sed -i '' -E \
   -e "s|(dl-ver(sion)?\">)[0-9.]+|\1$VERSION|g" site/index.html
 grep -q "Murmur-$VERSION.dmg" site/index.html || die "could not set the download link in site/index.html"
 
-step "Building and signing (universal: arm64 + x86_64)"
-swift build -c release --arch arm64 --arch x86_64 2>&1 | tail -1
+step "Building and signing"
+swift build -c release 2>&1 | tail -1
 ./Scripts/bundle.sh release | sed 's/^/  /'
-ARCHS="$(lipo -archs "$APP/Contents/MacOS/Murmur")"
-case "$ARCHS" in *x86_64*arm64*|*arm64*x86_64*) echo "  slices: $ARCHS" ;;
-  *) die "the bundle is not universal" "got: $ARCHS" ;; esac
 
 # The one machine a release is never tested on is a machine without this
 # checkout. SwiftPM's Bundle.module accessor falls back to an absolute path
@@ -113,19 +110,6 @@ trap 'mv .build.release-smoke .build 2>/dev/null || true' EXIT
 if ! "$SMOKE/Murmur.app/Contents/MacOS/Murmur" render-ui "$SMOKE" >"$SMOKE/log" 2>&1 || ! ls "$SMOKE"/*.png >/dev/null 2>&1; then
   mv .build.release-smoke .build
   die "the built app does not launch without this checkout's .build directory" "$(tail -3 "$SMOKE/log")"
-fi
-# The Intel slice too, under Rosetta, when this Mac has it. Not a test of
-# CoreML on Intel hardware, but it proves the x86_64 code path launches and
-# draws — the class of failure a build machine never sees on its own.
-if arch -x86_64 /usr/bin/true 2>/dev/null; then
-  rm -f "$SMOKE"/*.png
-  if ! arch -x86_64 "$SMOKE/Murmur.app/Contents/MacOS/Murmur" render-ui "$SMOKE" >"$SMOKE/log-x86" 2>&1 || ! ls "$SMOKE"/*.png >/dev/null 2>&1; then
-    mv .build.release-smoke .build
-    die "the x86_64 slice does not launch under Rosetta" "$(tail -3 "$SMOKE/log-x86")"
-  fi
-  echo "  x86_64 slice launches and renders under Rosetta"
-else
-  echo "  (no Rosetta here; x86_64 slice not exercised)"
 fi
 mv .build.release-smoke .build
 trap - EXIT

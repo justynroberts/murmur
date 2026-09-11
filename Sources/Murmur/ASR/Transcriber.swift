@@ -37,7 +37,7 @@ actor Transcriber {
                 detail = total == 0 ? "Preparing speech model"
                                     : "Downloading speech model — \(done) of \(total) files"
             case .compiling(let name):
-                detail = "Compiling \(name) for this Mac"
+                detail = "Compiling \(name) for the Neural Engine"
             @unknown default:
                 detail = "Preparing"
             }

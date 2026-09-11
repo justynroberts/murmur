@@ -9,22 +9,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CONFIG="${1:-debug}"
 APP="$ROOT/Murmur.app"
+BIN="$ROOT/.build/$CONFIG/Murmur"
 VERSION="0.8.3"
 
-# A universal build (swift build --arch arm64 --arch x86_64) lands under
-# .build/apple/Products/<Config>; a single-arch one under .build/<config>.
-# Prefer the universal one when it is newer, so a release ships both slices.
-case "$CONFIG" in release) PRODUCTS="Release" ;; *) PRODUCTS="Debug" ;; esac
-UNI="$ROOT/.build/apple/Products/$PRODUCTS"
-SINGLE="$ROOT/.build/$CONFIG"
-if [ -x "$UNI/Murmur" ] && { [ ! -x "$SINGLE/Murmur" ] || [ "$UNI/Murmur" -nt "$SINGLE/Murmur" ]; }; then
-    BUILD="$UNI"
-else
-    BUILD="$SINGLE"
-fi
-BIN="$BUILD/Murmur"
 [ -x "$BIN" ] || { echo "Build first: swift build -c $CONFIG"; exit 1; }
-echo "Bundling $(lipo -archs "$BIN" 2>/dev/null || echo '?') from ${BUILD#$ROOT/}"
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
@@ -37,7 +25,7 @@ cp "$ROOT/Assets/Murmur.icns" "$APP/Contents/Resources/Murmur.icns"
 # this machine's .build directory, and fatalErrors elsewhere. Our own font is
 # copied in flat and found by hand (see Fonts.register). release.sh proves the
 # built app launches with .build hidden.
-for b in "$BUILD"/*.bundle; do
+for b in "$ROOT/.build/$CONFIG"/*.bundle; do
     [ -e "$b" ] || continue
     cp -R "$b" "$APP/Contents/Resources/"
 done
