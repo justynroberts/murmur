@@ -188,7 +188,7 @@ struct SetupView: View {
                 return (d + ". Once only. You can close this window; Murmur carries on in the menu bar.", f)
             }
             return step == .done ? ("Ready. Transcription is instant from now on.", nil)
-                                 : ("About 450MB, downloaded once, then compiled for the Neural Engine — under a minute.", nil)
+                                 : ("About 450MB, downloaded once, then compiled for this Mac — under a minute.", nil)
         }()
         return HStack(alignment: .center, spacing: 12) {
             badge(step, number: 3)

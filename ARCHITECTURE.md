@@ -348,6 +348,13 @@ language). Update them alongside the code they describe.
 
 ## Stack
 
-Swift 6 (language mode 5), SwiftPM, macOS 14+, Apple Silicon. ASR via
+Swift 6 (language mode 5), SwiftPM, macOS 14+, universal (arm64 + x86_64 since 0.9.0;
+FluidAudio 0.15.7 is the first that compiles for Intel — 0.15.6 used unguarded `Float16`).
+`swift build -c release --arch arm64 --arch x86_64` puts the fat binary under
+`.build/apple/Products/Release`, which `bundle.sh` prefers when present. The release gate
+runs the x86_64 slice's `render-ui` under Rosetta, which proves the Intel code path launches
+and draws; it does **not** load the speech model under Rosetta — that exhausted 16GB and was
+killed, an artefact of emulating CoreML, not a verdict on Intel hardware. Nobody has run the
+model on a real Intel Mac yet; say so wherever Intel is mentioned. ASR via
 [FluidAudio](https://github.com/FluidInference/FluidAudio) 0.15.6 — pure Swift
 CoreML Parakeet, which is why there is no Python sidecar to distribute.

@@ -25,7 +25,11 @@ one-time model download unless you switch on the optional update check.
 
 ## Install
 
-Requires macOS 14 or later on Apple Silicon.
+Requires macOS 14 or later. Apple Silicon is where it shines. From 0.9.0 the app is a
+universal binary and runs on Intel Macs too, where the model uses the CPU and GPU instead
+of the Neural Engine, so transcription is slower and the one-off compile takes longer.
+Intel has not yet been tested on real hardware; if you have one, an
+[issue](https://github.com/justynroberts/murmur/issues) with how it went is welcome.
 
 1. **Download** [the latest disk image](https://github.com/justynroberts/murmur/releases/latest)
    and drag Murmur into Applications. It is signed and notarised, so it opens without a
@@ -35,7 +39,7 @@ Requires macOS 14 or later on Apple Silicon.
    what lets it watch for the key and type into other apps. It carries on by itself the
    moment each is granted.
 3. **Let it fetch the speech model.** About 450MB, downloaded once as a single file from
-   GitHub, then under a minute to compile for the Neural Engine. The window shows
+   GitHub, then under a minute to compile for this Mac. The window shows
    progress; close it if you like and the menu bar icon takes over.
 
 <p align="center">
@@ -166,7 +170,7 @@ With the check off, new versions are on the
 
 ```
 key held      →  CGEventTap  →  AVAudioEngine @ 16kHz
-key released  →  Parakeet TDT v2 (CoreML, Neural Engine)  →  rule-based cleanup
+key released  →  Parakeet TDT v2 (CoreML; Neural Engine on Apple Silicon)  →  rule-based cleanup
               →  pasteboard + Cmd-V into the frontmost app        (dictation)
               →  appended to a Markdown file                       (meeting)
 ```
