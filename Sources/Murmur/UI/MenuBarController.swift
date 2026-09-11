@@ -124,7 +124,6 @@ final class MenuBarController {
         if popover.isShown {
             popover.performClose(nil)
         } else {
-            state.page = .main
             popover.contentSize = fittingSize()
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKey()
@@ -185,14 +184,8 @@ final class MenuBarController {
     @objc private func quit() { NSApplication.shared.terminate(nil) }
 
     @objc private func openSettings() {
-        guard let button = statusItem.button else { return }
-        state.page = .settings
-        if !popover.isShown {
-            NSApp.activate(ignoringOtherApps: true)
-            popover.contentSize = fittingSize()
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            popover.contentViewController?.view.window?.makeKey()
-        }
+        if popover.isShown { popover.performClose(nil) }
+        state.requestSettingsWindow?()
     }
 
     /// Opens the popover unprompted — used once at first launch so the setup

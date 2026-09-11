@@ -150,14 +150,17 @@ not to views. `recent` keeps the last three dictations. Settings (`hotKey`,
 `meetingKey`, `transcriptFolder`, `launchAtLogin`, `theme`, `checkForUpdates`) live there
 too; `DictationController` subscribes to the keys and pushes them into the live event tap.
 
-The popover has two pages, `AppState.page`. **Main** is day-to-day: status, the meeting
-card, an update card, recent dictations, and a Start meeting action; its header icons are
-Transcripts, Word list, Settings, About. **Settings** is everything configurable, behind
-the gear, with a back button. Keep configuration off the main page — people open the
-panel to check status and jump into transcripts, not to change keys. A left click on the
-status item opens the main page; a right click shows a menu (Open Transcripts,
-Start/Stop Meeting, Settings…, Quit) via the attach-click-detach trick, since a status
-item with both a click action and a `menu` set would always show the menu.
+The popover is day-to-day only: status, the meeting card, an update card, recent
+dictations, and a Start meeting action; its header icons are Transcripts, Word list,
+Settings, About. **Settings is a separate window** (`SettingsWindowController`,
+`SettingsView`), opened by the gear or the status menu. It was briefly a second page
+inside the popover, which meant resizing the popover mid-transition with the new page
+centred and clipped in the old frame; a window sizes itself and is what "Settings…" means
+on macOS anyway. Keep configuration out of the popover. A left click on the status item
+opens the popover; a right click shows a menu (Open Transcripts, Start/Stop Meeting,
+Settings…, Quit) via the attach-click-detach trick, since a status item with both a click
+action and a `menu` set would always show the menu. `Murmur meeting debug-open-settings`
+opens the window and logs its frame.
 
 `Theme.swift` holds the design tokens (iris → magenta → coral gradient, per-scheme
 text/surface colours) and `Fonts.register()`, which loads the bundled Bricolage

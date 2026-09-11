@@ -48,7 +48,7 @@ if CommandLine.arguments.count > 1, CommandLine.arguments[1] == "meetingtest" {
 /// distributed notification. Scriptable from Shortcuts or a calendar hook.
 if CommandLine.arguments.count > 2, CommandLine.arguments[1] == "meeting" {
     let action = CommandLine.arguments[2]
-    guard ["start", "stop", "toggle", "debug-fill-panel"].contains(action) else {
+    guard ["start", "stop", "toggle", "debug-fill-panel", "debug-open-settings"].contains(action) else {
         print("usage: Murmur meeting start|stop|toggle"); exit(2)
     }
     DistributedNotificationCenter.default().postNotificationName(
@@ -161,6 +161,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var dictation: DictationController?
     private var updater: UpdateChecker?
     private var setup: SetupWindowController?
+    private var settings: SettingsWindowController?
     private let state = AppState()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -180,6 +181,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let setup = SetupWindowController(state: state)
         self.setup = setup
         state.requestSetupWindow = { [weak setup] in setup?.show() }
+        let settings = SettingsWindowController(state: state)
+        self.settings = settings
+        state.requestSettingsWindow = { [weak settings] in settings?.show() }
         UserDefaults.standard.set(true, forKey: "hasLaunchedBefore")
         if !SetupWindowController.hasCompletedSetup || !AXIsProcessTrusted() {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { setup.show() }
@@ -211,6 +215,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 case "start":  meeting.start()
                 case "stop":   meeting.stop(reason: "stopped")
                 case "debug-fill-panel": self?.menuBar?.debugFillAndPresent()
+                case "debug-open-settings":
+                    self?.settings?.show()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        let f = NSApp.windows.first { $0.title == "Murmur Settings" }?.frame ?? .zero
+                        let line = "settings window=\(NSStringFromRect(f)) visible=\(NSApp.windows.contains { $0.title == "Murmur Settings" && $0.isVisible })\n"
+                        let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+                            .appendingPathComponent("Murmur/debug-panel.log")
+                        try? line.write(to: url, atomically: true, encoding: .utf8)
+                    }
                 default:       meeting.toggle()
                 }
             }

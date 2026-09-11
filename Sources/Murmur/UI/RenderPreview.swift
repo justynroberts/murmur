@@ -23,7 +23,6 @@ enum RenderPreview {
 
         let allCases = cases + [
             ("permissions", .permissions(accessibility: false, microphone: true), []),
-            ("settings", .ready, []),
             ("update", .ready, []),
             ("crowded", .ready, [
                 Dictation(text: "So the plan for Thursday is to move the retro to the afternoon, invite the platform team, and make sure the budget line for the new hires is on the agenda before finance closes the quarter.", spoken: 12.3, latency: 0.31, injected: true),
@@ -37,6 +36,26 @@ enum RenderPreview {
         ]
         // README shots are taken from the bundled app so the version reads
         // as a real one; the bare binary says "dev".
+        // The settings window, both themes.
+        for scheme in [ThemeChoice.light, ThemeChoice.dark] {
+            let state = AppState()
+            state.theme = scheme
+            state.checkForUpdates = true
+            state.updateStatus = .checked(Date().addingTimeInterval(-540))
+            state.transcriptFolder = AppState.defaultTranscriptFolder
+            let view = SettingsView(state: state)
+                .environment(\.colorScheme, scheme == .dark ? .dark : .light)
+            let renderer = ImageRenderer(content: view)
+            renderer.scale = 2
+            if let image = renderer.nsImage, let tiff = image.tiffRepresentation,
+               let rep = NSBitmapImageRep(data: tiff),
+               let png = rep.representation(using: .png, properties: [:]) {
+                let path = "\(outputDirectory)/settings-\(scheme.rawValue).png"
+                try? png.write(to: URL(fileURLWithPath: path))
+                print("wrote \(path)  \(Int(image.size.width))x\(Int(image.size.height))pt")
+            }
+        }
+
         let setupCases: [(String, Phase)] = [
             ("permissions", .permissions(accessibility: false, microphone: false)),
             ("download", .settingUp(detail: "Downloading speech model — 3 of 7 files", fraction: 0.41)),
@@ -69,7 +88,6 @@ enum RenderPreview {
                 state.theme = scheme
                 state.phase = phase
                 state.transcriptFolder = AppState.defaultTranscriptFolder
-                if name == "settings" { state.page = .settings; state.checkForUpdates = true }
                 state.hotKey = .default   // the bare binary's defaults persist between runs
                 // Vary the settings across cases so every control state is drawn.
                 if name == "active" { state.previewLaunchAtLogin(true) }

@@ -50,14 +50,9 @@ enum ThemeChoice: String, CaseIterable {
     }
 }
 
-/// Which page the popover shows. Day-to-day use is the main page; settings are
-/// out of the way behind the gear, and reachable from the status item's menu.
-enum Page: Equatable { case main, settings }
-
 @MainActor
 final class AppState: ObservableObject {
     @Published var phase: Phase = .starting
-    @Published var page: Page = .main
     @Published var recent: [Dictation] = []
     @Published var theme: ThemeChoice = .auto {
         didSet { UserDefaults.standard.set(theme.rawValue, forKey: "theme") }
@@ -108,6 +103,8 @@ final class AppState: ObservableObject {
     @Published var meetingNote: String?
     /// Set by the app delegate; the popover offers it while setup is pending.
     var requestSetupWindow: (() -> Void)?
+    /// Set by the app delegate; the gear and the status menu open it.
+    var requestSettingsWindow: (() -> Void)?
 
     /// Set by `DictationController`; the popover and the status menu call them.
     var requestMeetingStop: (() -> Void)?
