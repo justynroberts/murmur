@@ -105,6 +105,19 @@ final class AppState: ObservableObject {
     var requestSetupWindow: (() -> Void)?
     /// Set by the app delegate; the gear and the status menu open it.
     var requestSettingsWindow: (() -> Void)?
+    /// Set by the app delegate; the Transcripts card, the folder icon and the
+    /// status menu open it, optionally on one transcript.
+    var requestTranscriptsWindow: ((URL?) -> Void)?
+    /// How many transcripts exist, for the card. Refreshed with the meeting state.
+    @Published var transcriptCount: Int = 0
+    @Published var latestTranscript: TranscriptItem?
+
+    func refreshTranscriptSummary() {
+        let store = TranscriptStore(folder: transcriptFolder)
+        store.reload()
+        transcriptCount = store.items.count
+        latestTranscript = store.items.first
+    }
 
     /// Set by `DictationController`; the popover and the status menu call them.
     var requestMeetingStop: (() -> Void)?

@@ -48,7 +48,7 @@ if CommandLine.arguments.count > 1, CommandLine.arguments[1] == "meetingtest" {
 /// distributed notification. Scriptable from Shortcuts or a calendar hook.
 if CommandLine.arguments.count > 2, CommandLine.arguments[1] == "meeting" {
     let action = CommandLine.arguments[2]
-    guard ["start", "stop", "toggle", "debug-fill-panel", "debug-open-settings"].contains(action) else {
+    guard ["start", "stop", "toggle", "debug-fill-panel", "debug-open-settings", "debug-open-transcripts"].contains(action) else {
         print("usage: Murmur meeting start|stop|toggle"); exit(2)
     }
     DistributedNotificationCenter.default().postNotificationName(
@@ -162,6 +162,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var updater: UpdateChecker?
     private var setup: SetupWindowController?
     private var settings: SettingsWindowController?
+    private var transcripts: TranscriptsWindowController?
     private let state = AppState()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -184,6 +185,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let settings = SettingsWindowController(state: state)
         self.settings = settings
         state.requestSettingsWindow = { [weak settings] in settings?.show() }
+        let transcripts = TranscriptsWindowController(state: state)
+        self.transcripts = transcripts
+        state.requestTranscriptsWindow = { [weak transcripts] url in transcripts?.show(selecting: url) }
+        state.refreshTranscriptSummary()
         UserDefaults.standard.set(true, forKey: "hasLaunchedBefore")
         if !SetupWindowController.hasCompletedSetup || !AXIsProcessTrusted() {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { setup.show() }
@@ -215,6 +220,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 case "start":  meeting.start()
                 case "stop":   meeting.stop(reason: "stopped")
                 case "debug-fill-panel": self?.menuBar?.debugFillAndPresent()
+                case "debug-open-transcripts":
+                    self?.transcripts?.show()
                 case "debug-open-settings":
                     self?.settings?.show()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {

@@ -36,6 +36,35 @@ enum RenderPreview {
         ]
         // README shots are taken from the bundled app so the version reads
         // as a real one; the bare binary says "dev".
+        // The transcripts window, both themes, on a scratch folder with two files.
+        do {
+            let dir = FileManager.default.temporaryDirectory.appendingPathComponent("murmur-render-transcripts", isDirectory: true)
+            try? FileManager.default.removeItem(at: dir)
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            let done = "# Meeting — Thursday 11 September 2026\n\n**Started** 09:00\n\nSo the plan for Thursday is to move the retro to the afternoon, invite the platform team, and make sure the budget line for the new hires is on the agenda before finance closes the quarter.\n\nDave will send the revised numbers before the call rather than walking through them live. **Action:** Justyn to confirm the room.\n\nWe agreed the onboarding flag stays off in production until the copy review is done.\n\n---\n\n**Ended** 09:47 · 47 min · 12 segments · stopped\n"
+            let earlier = "# Meeting — Tuesday 9 September 2026\n\n**Started** 14:00\n\nShort sync about the release.\n\n---\n\n**Ended** 14:12 · 12 min · 3 segments · stopped\n"
+            try? done.write(to: dir.appendingPathComponent("Meeting 2026-09-11 09.00.md"), atomically: true, encoding: .utf8)
+            try? earlier.write(to: dir.appendingPathComponent("Meeting 2026-09-09 14.00.md"), atomically: true, encoding: .utf8)
+            for scheme in [ThemeChoice.light, ThemeChoice.dark] {
+                let state = AppState()
+                state.theme = scheme
+                let store = TranscriptStore(folder: dir)
+                store.reload()
+                let view = TranscriptsView(state: state, store: store, initialSelection: store.items.first?.url, staticLayout: true)
+                    .frame(width: 820, height: 540)
+                    .environment(\.colorScheme, scheme == .dark ? .dark : .light)
+                let renderer = ImageRenderer(content: view)
+                renderer.scale = 2
+                if let image = renderer.nsImage, let tiff = image.tiffRepresentation,
+                   let rep = NSBitmapImageRep(data: tiff),
+                   let png = rep.representation(using: .png, properties: [:]) {
+                    let path = "\(outputDirectory)/transcripts-\(scheme.rawValue).png"
+                    try? png.write(to: URL(fileURLWithPath: path))
+                    print("wrote \(path)  \(Int(image.size.width))x\(Int(image.size.height))pt")
+                }
+            }
+        }
+
         // The settings window, both themes.
         for scheme in [ThemeChoice.light, ThemeChoice.dark] {
             let state = AppState()
@@ -110,6 +139,11 @@ enum RenderPreview {
                     state.availableUpdate = UpdateInfo(version: "0.9.0", url: URL(string: "https://github.com/justynroberts/murmur/releases/latest")!, downloadURL: nil, downloadSize: nil)
                     state.meeting = MeetingRecorder.Session(startedAt: Date().addingTimeInterval(-1523), fileURL: state.transcriptFolder.appendingPathComponent("Meeting 2026-09-10 09.00.md"), segments: 41, lastSavedAt: Date().addingTimeInterval(-3))
                 }
+                state.transcriptCount = 12
+                state.latestTranscript = TranscriptStore.item(at: URL(fileURLWithPath: "/tmp/Meeting 2026-09-11 09.00.md"))
+                    ?? TranscriptItem(url: URL(fileURLWithPath: "/tmp/Meeting 2026-09-11 09.00.md"), title: "Meeting — Thursday 11 September 2026",
+                                      started: Date().addingTimeInterval(-2 * 86400), startedClock: "09:00", endedClock: "09:47",
+                                      length: "47 min", segments: 12, bytes: 4200, modified: Date())
                 if name == "meeting" {
                     state.meeting = MeetingRecorder.Session(
                         startedAt: Date().addingTimeInterval(-1523),

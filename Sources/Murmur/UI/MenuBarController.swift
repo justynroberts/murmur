@@ -160,7 +160,7 @@ final class MenuBarController {
     /// Right-click: the day-to-day actions without opening the panel.
     private func showMenu() {
         let menu = NSMenu()
-        menu.addItem(withTitle: "Open Transcripts", action: #selector(openTranscripts), keyEquivalent: "t").target = self
+        menu.addItem(withTitle: "Transcripts…", action: #selector(openTranscripts), keyEquivalent: "t").target = self
         if state.meeting == nil {
             menu.addItem(withTitle: "Start Meeting", action: #selector(startMeeting), keyEquivalent: "m").target = self
         } else {
@@ -178,7 +178,10 @@ final class MenuBarController {
         statusItem.menu = nil
     }
 
-    @objc private func openTranscripts() { state.openTranscripts() }
+    @objc private func openTranscripts() {
+        if popover.isShown { popover.performClose(nil) }
+        state.requestTranscriptsWindow?(nil)
+    }
     @objc private func startMeeting() { state.requestMeetingStart?() }
     @objc private func stopMeeting() { state.requestMeetingStop?() }
     @objc private func quit() { NSApplication.shared.terminate(nil) }

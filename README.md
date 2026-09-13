@@ -117,8 +117,14 @@ The transcript is written to a file as you go.
 - A tap is a press and release with nothing else in between, so pressing another key
   while the modifier is down is treated as a shortcut, not a tap.
 
-To get at transcripts: the **folder icon** in the panel, **Open transcript** on the meeting
-card, or **Open Transcripts** from the right-click menu.
+**Your transcripts live in a window of their own.** The Transcripts card in the panel, the
+document icon beside it, **Open transcript** on the meeting card, and **Transcripts…** in the
+right-click menu all open it. Every meeting is listed newest first with its length and
+segment count; the selected one is shown rendered, or as raw Markdown with a flick of the
+toggle. **Copy Markdown** (⌘C) copies the whole file; **Copy Text** (⇧⌘C) copies just the
+words, without the header and footer. Open in your editor, show in Finder, or move to the
+Bin from the same row. Search covers titles and the text inside. A meeting in progress
+shows with a red dot and grows in place while you watch.
 
 You can also start and stop from a script or a Shortcut:
 

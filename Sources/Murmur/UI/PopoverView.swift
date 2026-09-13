@@ -55,6 +55,7 @@ struct PopoverView: View {
         VStack(alignment: .leading, spacing: 14) {
             statusCard
             if let meeting = state.meeting { meetingCard(meeting) }
+            transcriptsCard
             if let update = state.availableUpdate { updateCard(update) }
             if !state.recent.isEmpty { recentList }
         }
@@ -97,7 +98,7 @@ struct PopoverView: View {
 
             // Day-to-day first: transcripts and the word list are the two
             // things people open most. Settings is one tap away, not in the way.
-            iconButton("folder", label: "Open transcripts") { state.openTranscripts() }
+            iconButton("doc.text", label: "Transcripts") { state.requestTranscriptsWindow?(nil) }
             iconButton("character.book.closed", label: "Edit word list") { openDictionary() }
             iconButton("gearshape", label: "Settings") { state.requestSettingsWindow?() }
             iconButton("info", label: "About this app") { showAbout = true }
@@ -358,7 +359,7 @@ struct PopoverView: View {
             }
             label(meetingSavedLine(meeting), Tokens.text3(scheme), size: 10.5)
             HStack(spacing: 10) {
-                Button("Open transcript") { NSWorkspace.shared.open(meeting.fileURL) }
+                Button("Open transcript") { state.requestTranscriptsWindow?(meeting.fileURL) }
                     .buttonStyle(.plain)
                     .font(Fonts.display(11, .medium))
                     .foregroundStyle(Tokens.accent(scheme))
@@ -398,6 +399,46 @@ struct PopoverView: View {
         case .relaunching:        return "Relaunching…"
         case .failed:             return ""
         }
+    }
+
+    // MARK: - Transcripts (the thing people come back for)
+
+    private var transcriptsCard: some View {
+        Button { state.requestTranscriptsWindow?(nil) } label: {
+            HStack(spacing: 10) {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Tokens.gradient)
+                    .frame(width: 30, height: 30)
+                    .overlay(Image(systemName: "doc.text").font(.system(size: 13, weight: .bold)).foregroundStyle(.white))
+                VStack(alignment: .leading, spacing: 2) {
+                    label("Transcripts", Tokens.text(scheme), size: 12.5, weight: .semibold)
+                    if let latest = state.latestTranscript {
+                        label(transcriptsSummary(latest), Tokens.text3(scheme), size: 10.5)
+                    } else {
+                        label("None yet · tap \(state.meetingKey.name) to record a meeting", Tokens.text3(scheme), size: 10.5)
+                    }
+                }
+                Spacer(minLength: 6)
+                Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Tokens.text3(scheme))
+            }
+            .padding(11)
+            .background(
+                RoundedRectangle(cornerRadius: Tokens.rPanel, style: .continuous)
+                    .fill(Tokens.raised(scheme).opacity(scheme == .dark ? 0.7 : 1))
+                    .overlay(RoundedRectangle(cornerRadius: Tokens.rPanel, style: .continuous).strokeBorder(Tokens.border(scheme)))
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
+        .help("Browse, read and copy your meeting transcripts")
+    }
+
+    private func transcriptsSummary(_ latest: TranscriptItem) -> String {
+        let n = state.transcriptCount
+        let when = RelativeDateTimeFormatter()
+        when.unitsStyle = .short
+        let last = state.meeting?.fileURL == latest.url ? "recording now" : "last \(when.localizedString(for: latest.started, relativeTo: Date()))"
+        return "\(n) meeting\(n == 1 ? "" : "s") · \(last)"
     }
 
     private func elapsed(since start: Date, now: Date) -> String {

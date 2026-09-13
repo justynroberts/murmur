@@ -88,6 +88,7 @@ final class MeetingRecorder {
         session = Session(startedAt: started, fileURL: fileURL)
         state.meeting = session
         state.meetingNote = nil
+        state.refreshTranscriptSummary()
 
         flushTimer = Timer.scheduledTimer(withTimeInterval: Self.flushInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.flushToDisk() }
@@ -105,6 +106,7 @@ final class MeetingRecorder {
 
         session = nil
         state.meeting = nil
+        state.refreshTranscriptSummary()
 
         // The footer goes on after every queued segment has landed, so the
         // file ends with its last words rather than a footer in the middle.

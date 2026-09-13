@@ -21,6 +21,7 @@ enum MeetingTest {
     static func run() -> Int32 {
         segmenterTests()
         hotKeyTests()
+        transcriptTests()
 
         // The recorder is main-actor bound, so the main thread cannot block on a
         // semaphore while the work waits for it. Pump the run loop instead.
@@ -35,6 +36,65 @@ enum MeetingTest {
 
         print("\n\(failures == 0 ? "all meeting tests passed" : "\(failures) failure(s)")")
         return failures == 0 ? 0 : 1
+    }
+
+    // MARK: -1. Transcript listing and Markdown blocks (pure)
+
+    private static func transcriptTests() {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("murmur-transcripts-\(Int(Date().timeIntervalSince1970))", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let done = """
+        # Meeting — Thursday 11 September 2026
+
+        **Started** 09:00
+
+        First thing said.
+
+        Second thing, **with emphasis**.
+
+        ## Recovered after an interruption
+
+        A recovered line.
+
+        _Recovered 1 segment at 09:50._
+
+        ---
+
+        **Ended** 09:47 · 47 min · 12 segments · stopped
+
+        """
+        let live = "# Meeting — Thursday 11 September 2026\n\n**Started** 10:00\n\nStill talking.\n\n"
+        try? done.write(to: dir.appendingPathComponent("Meeting 2026-09-11 09.00.md"), atomically: true, encoding: .utf8)
+        try? live.write(to: dir.appendingPathComponent("Meeting 2026-09-11 10.00.md"), atomically: true, encoding: .utf8)
+        try? "not one".write(to: dir.appendingPathComponent("notes.md"), atomically: true, encoding: .utf8)
+
+        let store = TranscriptStore(folder: dir)
+        store.reload()
+        check(store.items.count == 2, "only Meeting files are listed", "\(store.items.map(\.fileName))")
+        guard store.items.count == 2 else { return }
+        check(store.items[0].fileName == "Meeting 2026-09-11 10.00.md", "newest first", store.items[0].fileName)
+        let finished = store.items[1], running = store.items[0]
+        check(finished.title == "Meeting — Thursday 11 September 2026", "title from the heading", finished.title)
+        check(finished.startedClock == "09:00" && finished.endedClock == "09:47", "start and end from header and footer",
+              "\(String(describing: finished.startedClock)) \(String(describing: finished.endedClock))")
+        check(finished.length == "47 min" && finished.segments == 12, "length and segments from the footer",
+              "\(String(describing: finished.length)) \(String(describing: finished.segments))")
+        check(!running.isComplete && running.endedClock == nil, "a file without a footer is in progress")
+
+        let blocks = MarkdownBlock.parse(done)
+        check(blocks.first == .heading(level: 1, text: "Meeting — Thursday 11 September 2026"), "h1 parsed", "\(blocks.first.map { "\($0)" } ?? "nil")")
+        check(blocks.contains(.paragraph("Second thing, **with emphasis**.")), "paragraphs keep inline markdown")
+        check(blocks.contains(.heading(level: 2, text: "Recovered after an interruption")), "h2 parsed")
+        check(blocks.contains(.note("Recovered 1 segment at 09:50.")), "italic note line parsed")
+        check(blocks.contains(.rule), "rule parsed")
+        check(blocks.filter { if case .paragraph = $0 { return true } else { return false } }.count == 5,
+              "five paragraphs incl. the Started/Ended lines", "\(blocks)")
+
+        let plain = TranscriptStore.plainText(of: done)
+        check(plain == "First thing said.\n\nSecond thing, **with emphasis**.\n\nA recovered line.", "plain text drops the furniture", plain)
     }
 
     // MARK: 0. Tap detection, with synthetic events

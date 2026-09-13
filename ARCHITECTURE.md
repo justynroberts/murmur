@@ -225,6 +225,19 @@ No per-line clock stamps — that was a deliberate choice. Dictation never write
 - **Scriptable**: `Murmur meeting start|stop|toggle` posts a distributed notification the
   running app acts on, so a calendar hook or Shortcut can drive it.
 
+**The Transcripts window** (`TranscriptsWindowController`, `TranscriptsView`) is the front
+door to meetings: `TranscriptStore` lists `Meeting *.md` files from the transcript folder,
+reading only the head and tail of each for title, start, end, length and segments (the file
+name carries the start time, so sorting never parses a header). `MarkdownBlock.parse` turns
+the subset of Markdown a transcript uses into blocks; inline bold and italic go through
+`TranscriptsView.inline`, which sets a font per run because a plain `.font()` on a Text
+flattens what `AttributedString(markdown:)` marks up. Copy Markdown is the whole file; Copy
+Text drops the furniture (`TranscriptStore.plainText`). The window re-reads the folder every
+3s while visible, so a meeting in progress grows in place, and on every meeting state change.
+Previews pass `staticLayout: true` because an offscreen render cannot lay out a ScrollView.
+The panel carries a Transcripts card (`transcriptCount`, `latestTranscript`) refreshed when a
+meeting starts or stops. `Murmur meeting debug-open-transcripts` opens the window live.
+
 `swift run Murmur meetingtest` covers all of it without a microphone: segmenter cuts on
 synthetic audio, a WAV through the real recorder into a scratch folder (file, header,
 words, footer, spool emptied), and recovery of a planted spool.
