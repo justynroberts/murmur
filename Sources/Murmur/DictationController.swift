@@ -18,6 +18,8 @@ final class DictationController {
     private var isRecording = false
     private var pressedAt: CFAbsoluteTime = 0
     private var tick: Timer?
+    /// The app that had focus when the key went down; the paste goes there.
+    private var target = AppTarget(bundleID: nil, name: nil, kind: .other)
     private var cancellables = Set<AnyCancellable>()
 
     /// Audio captured before the models finished loading. Held rather than dropped,
@@ -111,6 +113,7 @@ final class DictationController {
             try audio.start()
             isRecording = true
             pressedAt = CFAbsoluteTimeGetCurrent()
+            target = AppTarget.frontmost()
 
             if modelsReady { state.phase = .recording(seconds: 0) }
 
@@ -150,9 +153,11 @@ final class DictationController {
 
     private func process(_ samples: [Float]) async {
         let spoken = Double(samples.count) / 16_000.0
+        let target = self.target
+        let profile: CleanupProfile = (state.codeInDevApps && target.kind != .other) ? .code : .prose
         do {
             let (raw, elapsed) = try await transcriber.transcribe(samples)
-            let cleaned = RuleCleaner.clean(raw)
+            let cleaned = RuleCleaner.clean(raw, profile: profile)
 
             guard !cleaned.isEmpty, cleaned != "." else {
                 state.phase = .ready
@@ -162,6 +167,9 @@ final class DictationController {
             var injected = true
             do {
                 try TextInjector.insert(cleaned)
+                if target.kind == .terminal, state.enterInTerminals {
+                    TextInjector.pressReturn(after: 0.12)
+                }
             } catch {
                 injected = false
                 state.phase = .failed(error.localizedDescription)

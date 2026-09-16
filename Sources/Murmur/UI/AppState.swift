@@ -89,6 +89,18 @@ final class AppState: ObservableObject {
     @Published var settingsNote: String?
     private var applyingLoginItem = false
 
+    // MARK: Developers — see AppTarget and CodeFormatter.
+
+    /// Symbol vocabulary and no auto-punctuation when the frontmost app is a
+    /// terminal or an editor. Identifier modes are on everywhere regardless.
+    @Published var codeInDevApps: Bool = UserDefaults.standard.object(forKey: "codeInDevApps") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(codeInDevApps, forKey: "codeInDevApps") }
+    }
+    /// Press Enter after inserting into a terminal: speak, release, sent.
+    @Published var enterInTerminals: Bool = UserDefaults.standard.object(forKey: "enterInTerminals") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(enterInTerminals, forKey: "enterInTerminals") }
+    }
+
     // MARK: Meeting mode — see MeetingRecorder.
 
     /// Tapped to start and stop meeting mode. Must differ from `hotKey`.

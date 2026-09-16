@@ -99,6 +99,22 @@ struct SettingsView: View {
                     .truncationMode(.middle)
             }
 
+            VStack(alignment: .leading, spacing: 8) {
+                label("Developers", Tokens.text2(scheme), size: 11.5)
+                HStack {
+                    label("Code vocabulary in terminals and editors", Tokens.text3(scheme), size: 10.5)
+                    Spacer()
+                    pillSwitch(isOn: $state.codeInDevApps, label: "Code vocabulary in terminals and editors")
+                }
+                HStack {
+                    label("Press Enter after inserting in a terminal", Tokens.text3(scheme), size: 10.5)
+                    Spacer()
+                    pillSwitch(isOn: $state.enterInTerminals, label: "Press Enter after inserting in a terminal")
+                }
+                label("Say \"camel case user session token\" anywhere for userSessionToken. In a terminal or editor, \"open paren\", \"arrow\", \"double equals\" and friends become symbols, and nothing gets a capital or a full stop.",
+                      Tokens.text3(scheme), size: 9.5)
+            }
+
             if let note = state.meetingNote {
                 label(note, Tokens.coral, size: 10)
                     .transition(.blurIn)

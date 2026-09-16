@@ -242,6 +242,32 @@ meeting starts or stops. `Murmur meeting debug-open-transcripts` opens the windo
 synthetic audio, a WAV through the real recorder into a scratch folder (file, header,
 words, footer, spool emptied), and recovery of a planted spool.
 
+## Developers: spoken code, app targets, and the MCP server
+
+`CodeFormatter` runs inside `RuleCleaner.clean` after the dictionary. Identifier modes
+(`camel case …`, `snake case …`, `kebab`, `constant`, `pascal`, `dot`, `slash path`) are
+on in every profile: the two-word trigger is explicit enough never to fire in prose. An
+identifier runs to the next punctuation, the word `end`, the end of the utterance, or —
+in the code profile — the next symbol phrase. The symbol vocabulary is code profile only,
+longest phrase first, each glyph with an attach rule (`(` glues both sides for calls, `{`
+to the right, `)` left, operators spaced, `dash` right for flags). In the code profile
+there is no sentence capital and no trailing stop: `git status.` is not a command. An
+utterance ending in an identifier gets no stop in either profile. Every rule has a
+cleantest case; add one for every phrase you add.
+
+`AppTarget.frontmost()` is read when the key goes *down* — the paste lands in the app
+that had focus then. Terminals and editors (bundle ID lists in `AppTarget`) get the code
+profile when `codeInDevApps` is on; terminals also get `TextInjector.pressReturn` a beat
+after the paste when `enterInTerminals` is on, which is what makes a terminal agent
+speak-release-sent. Extend the ID lists rather than sniffing window titles.
+
+`MCPServer` (`Murmur mcp`) is newline-delimited JSON-RPC over stdio, protocol
+2024-11-05, tools only: `list_transcripts`, `read_transcript`, `search_transcripts`,
+`start_meeting`, `stop_meeting`. `Transcripts` is the shared read-only view of the folder
+for it and for `Murmur transcripts list|show|search`; it reads the app's own
+`transcriptFolder` default and `MURMUR_TRANSCRIPTS` overrides it for tests. It never
+touches the network. Register with `claude mcp add murmur -- <app>/Contents/MacOS/Murmur mcp`.
+
 ## Filler stripping
 
 `RuleCleaner` matches vocal noises as regex patterns, not a word list, so elongations

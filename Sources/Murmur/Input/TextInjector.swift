@@ -50,6 +50,18 @@ enum TextInjector {
         pb.writeObjects(items)
     }
 
+    /// Enter, a beat after the paste so the target has read the pasteboard.
+    static func pressReturn(after delay: TimeInterval) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            let source = CGEventSource(stateID: .combinedSessionState)
+            let returnKey: CGKeyCode = 0x24
+            guard let down = CGEvent(keyboardEventSource: source, virtualKey: returnKey, keyDown: true),
+                  let up = CGEvent(keyboardEventSource: source, virtualKey: returnKey, keyDown: false) else { return }
+            down.post(tap: .cghidEventTap)
+            up.post(tap: .cghidEventTap)
+        }
+    }
+
     private static func sendCommandV() {
         let source = CGEventSource(stateID: .combinedSessionState)
         let vKey: CGKeyCode = 0x09

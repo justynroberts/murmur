@@ -133,6 +133,65 @@ You can also start and stop from a script or a Shortcut:
 /Applications/Murmur.app/Contents/MacOS/Murmur meeting stop
 ```
 
+## For developers
+
+Murmur is built to be the voice in front of a terminal and a coding agent.
+
+### Speak identifiers
+
+Say a casing mode and the words, anywhere:
+
+| You say | You get |
+|---|---|
+| camel case user session token | `userSessionToken` |
+| snake case max retry count | `max_retry_count` |
+| kebab case build and deploy | `build-and-deploy` |
+| constant case default timeout | `DEFAULT_TIMEOUT` |
+| pascal case user profile view | `UserProfileView` |
+| dot case config server port | `config.server.port` |
+| slash path usr local bin | `usr/local/bin` |
+
+An identifier runs until you pause (the model puts a comma there), say "end", or stop
+talking. "Rename it to camel case user session token, then save" comes out as
+"Rename it to userSessionToken, then save."
+
+### Speak symbols
+
+In a terminal or an editor, Murmur switches to a code vocabulary: open and close paren,
+brace, bracket and angle; arrow, fat arrow, equals, double and triple equals, not equals,
+plus, minus, pipe, ampersand, slash, backslash, dot, colon, semicolon, comma, hash,
+dollar, percent, caret, tilde, underscore, star, backtick, dash, at sign, new line, tab.
+Brackets and dots glue to their neighbours, operators get spaces, and nothing gets a
+capital letter or a full stop, so "git checkout dash b camel case feature branch" is
+`git checkout -b featureBranch` and "foo open paren bar comma baz close paren" is
+`foo(bar, baz)`. In Slack or mail the same words stay words.
+
+### Speak to your agent
+
+In a terminal, Murmur presses Enter after inserting, so talking to Claude Code, Codex or
+any terminal agent is speak, release, sent. Both of these are switches under Developers
+in Settings. Terminals it knows: Terminal, iTerm2, Warp, Ghostty, Alacritty, kitty,
+WezTerm, Hyper. Editors: Xcode, VS Code, Cursor, Windsurf, Zed, Sublime, JetBrains, Nova,
+BBEdit, MacVim, Neovide.
+
+### Give your agent your meetings
+
+Murmur is an MCP server. Register it once and any MCP client can list, read and search
+your meeting transcripts, and start or stop a meeting:
+
+```bash
+claude mcp add murmur -- /Applications/Murmur.app/Contents/MacOS/Murmur mcp
+```
+
+Then ask: "what did we decide about the budget on Thursday?" The agent process is local
+and reads local files; nothing leaves the machine. The same is available by hand:
+
+```bash
+/Applications/Murmur.app/Contents/MacOS/Murmur transcripts list
+/Applications/Murmur.app/Contents/MacOS/Murmur transcripts show latest
+/Applications/Murmur.app/Contents/MacOS/Murmur transcripts search budget
+```
+
 ## Settings
 
 The **gear icon** in the panel, or Settings from the right-click menu.
@@ -148,6 +207,8 @@ The **gear icon** in the panel, or Settings from the right-click menu.
 | Tap for meeting mode | Which modifier to tap. Right Option by default. The two can never be the same key. |
 | Transcripts | Where meeting files go. Open it, or change it. |
 | Launch at login | Keeps Murmur in the menu bar after a restart. |
+| Code vocabulary in terminals and editors | Symbols, no capitals, no full stops when the text is going to a terminal or editor. On by default. |
+| Press Enter after inserting in a terminal | Speak, release, sent. On by default. |
 | Check for updates | **Off by default.** When on, asks GitHub for the latest version number once a day and sends nothing else. |
 
 Fn/Globe is not offered as a key because a bare press fires the emoji picker or Apple's

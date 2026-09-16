@@ -37,6 +37,27 @@ if CommandLine.arguments.count > 1, CommandLine.arguments[1] == "selfupdate" {
     exit(0)
 }
 
+/// `Murmur mcp` serves meeting transcripts to a coding agent over stdio;
+/// `Murmur transcripts list|show <name>|search <phrase>` prints the same by hand.
+if CommandLine.arguments.count > 1, CommandLine.arguments[1] == "mcp" {
+    MCPServer.run()
+}
+if CommandLine.arguments.count > 1, CommandLine.arguments[1] == "transcripts" {
+    let sub = CommandLine.arguments.count > 2 ? CommandLine.arguments[2] : "list"
+    let arg = CommandLine.arguments.count > 3 ? CommandLine.arguments[3...].joined(separator: " ") : ""
+    do {
+        switch sub {
+        case "list":   print(Transcripts.list(limit: 50))
+        case "show":   print(try Transcripts.read(arg.isEmpty ? "latest" : arg))
+        case "search": print(Transcripts.search(arg, limit: 20))
+        default:       print("usage: Murmur transcripts list | show <name|latest> | search <phrase>"); exit(2)
+        }
+    } catch {
+        print(error.localizedDescription); exit(1)
+    }
+    exit(0)
+}
+
 /// `murmur meetingtest` drives meeting mode end to end without a microphone:
 /// the segmenter on synthetic audio, a WAV through the real pipeline into a
 /// scratch folder, and recovery of a spool left by a simulated crash.

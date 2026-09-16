@@ -134,7 +134,18 @@ enum CleanerTest {
             }
         }
 
-        let total = cases.count + dictionaryCases.count + codeCases.count
+        let targets: [(String?, AppTarget.Kind)] = [
+            ("com.apple.Terminal", .terminal), ("com.googlecode.iterm2", .terminal), ("com.mitchellh.ghostty", .terminal),
+            ("com.microsoft.VSCode", .editor), ("com.todesktop.230313mzl4w4u92", .editor), ("com.jetbrains.intellij", .editor),
+            ("com.tinyspeck.slackmacgap", .other), ("com.apple.mail", .other), (nil, .other),
+        ]
+        for (id, kind) in targets {
+            let ok = AppTarget.kind(of: id) == kind
+            if !ok { failures += 1 }
+            print("\(ok ? "PASS" : "FAIL")  target: \(id ?? "nil") is \(kind)")
+        }
+
+        let total = cases.count + dictionaryCases.count + codeCases.count + targets.count
         print("\n\(total - failures)/\(total) passed")
         return failures == 0 ? 0 : 1
     }
