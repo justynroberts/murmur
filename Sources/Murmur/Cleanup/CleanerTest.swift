@@ -70,8 +70,46 @@ enum CleanerTest {
         "c++": "C++",
     ])
 
+    /// Spoken formatting. Identifier modes work in both profiles; the symbol
+    /// vocabulary only in code, where "pipe" and "dash" are not words.
+    private static let codeCases: [(input: String, profile: CleanupProfile, expected: String, note: String)] = [
+        ("rename it to camel case user session token, then save", .prose, "Rename it to userSessionToken, then save.", "camel case, closed by a comma"),
+        ("camel case user session token", .prose, "userSessionToken", "identifier alone gets no full stop"),
+        ("snake case max retry count end and export it", .prose, "max_retry_count and export it.", "'end' closes an identifier"),
+        ("Kebab case build and deploy.", .prose, "build-and-deploy.", "kebab, sentence-start capital ignored"),
+        ("constant case default timeout", .prose, "DEFAULT_TIMEOUT", "constant case"),
+        ("pascal case user profile view controller", .prose, "UserProfileViewController", "pascal case"),
+        ("dot case config server port", .prose, "config.server.port", "dot case"),
+        ("slash path usr local bin", .prose, "usr/local/bin", "slash path"),
+        ("um camel case foo bar", .prose, "fooBar", "filler stripped before the mode"),
+        ("the pipe from a to b is slow", .prose, "The pipe from a to b is slow.", "prose keeps its words"),
+        ("the pipe from a to b is slow", .code, "the | from a to b is slow", "code profile trades words for symbols, no capital, no stop"),
+        ("snake case max retry count equals three", .code, "max_retry_count = three", "identifier stops at an operator"),
+        ("foo open paren bar comma baz close paren", .code, "foo(bar, baz)", "call-style brackets"),
+        ("if x double equals y open brace", .code, "if x == y {", "longest phrase wins"),
+        ("config dot server dot port", .code, "config.server.port", "dot glues both sides"),
+        ("run tests new line git status", .code, "run tests\ngit status", "new line"),
+        ("fat arrow x plus one", .code, "=> x + one", "fat arrow, plus"),
+        ("git checkout dash b camel case feature branch", .code, "git checkout -b featureBranch", "flag then identifier"),
+        ("git status", .code, "git status", "plain command untouched: no capital, no stop"),
+        ("please fix the failing test and rerun it", .code, "please fix the failing test and rerun it", "prose in the code profile stays intact"),
+        ("the case for this is strong", .prose, "The case for this is strong.", "'case' without a mode word is prose"),
+        ("in this case, camel case my var", .prose, "In this case, myVar", "'this case' is not a mode; the real one still works"),
+    ]
+
     static func run() -> Int32 {
         var failures = 0
+        for testCase in codeCases {
+            let actual = RuleCleaner.clean(testCase.input, dictionary: nil, profile: testCase.profile)
+            let ok = actual == testCase.expected
+            if !ok { failures += 1 }
+            print("\(ok ? "PASS" : "FAIL")  code: \(testCase.note)")
+            if !ok {
+                print("      in:       \"\(testCase.input)\"")
+                print("      expected: \"\(testCase.expected)\"")
+                print("      actual:   \"\(actual)\"")
+            }
+        }
         for testCase in cases {
             let actual = RuleCleaner.clean(testCase.input, dictionary: nil)
             let ok = actual == testCase.expected
@@ -96,7 +134,7 @@ enum CleanerTest {
             }
         }
 
-        let total = cases.count + dictionaryCases.count
+        let total = cases.count + dictionaryCases.count + codeCases.count
         print("\n\(total - failures)/\(total) passed")
         return failures == 0 ? 0 : 1
     }

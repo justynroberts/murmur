@@ -46,7 +46,8 @@ enum RuleCleaner {
         return fillerPattern.firstMatch(in: bare, options: [], range: range) != nil
     }
 
-    static func clean(_ raw: String, dictionary: UserDictionary? = .shared) -> String {
+    static func clean(_ raw: String, dictionary: UserDictionary? = .shared,
+                      profile: CleanupProfile = .prose) -> String {
         var text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return text }
 
@@ -59,7 +60,9 @@ enum RuleCleaner {
         }
 
         text = tidyPunctuation(text)
-        text = capitaliseSentences(text)
+        // Commands and identifiers are case-sensitive: "git status" must not
+        // become "Git status". The code profile leaves capitalisation alone.
+        if profile == .prose { text = capitaliseSentences(text) }
 
         // Deliberately after capitalisation: the user's spelling is the final word.
         // Running it earlier would let sentence-start capitalisation turn "npm"
@@ -68,7 +71,15 @@ enum RuleCleaner {
             text = dictionary.apply(to: text)
         }
 
-        if let last = text.last, !".!?".contains(last) {
+        // Spoken identifiers and, in the code profile, symbols. After the
+        // dictionary so "pager duty" is already "PagerDuty" when it is cased.
+        let formatted = CodeFormatter.apply(text, profile: profile)
+        text = formatted.text
+
+        // Prose gets a full stop, unless it ends in an identifier, where a stop
+        // on the end of `userSessionToken` would be a bug. The code profile
+        // never adds one: "git status." is not a command.
+        if profile == .prose, !formatted.endsWithCode, let last = text.last, !".!?\n".contains(last) {
             text.append(".")
         }
         return text
