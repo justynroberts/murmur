@@ -257,9 +257,13 @@ cleantest case; add one for every phrase you add.
 
 `AppTarget.frontmost()` is read when the key goes *down* — the paste lands in the app
 that had focus then. Terminals and editors (bundle ID lists in `AppTarget`) get the code
-profile when `codeInDevApps` is on; terminals also get `TextInjector.pressReturn` a beat
-after the paste when `enterInTerminals` is on, which is what makes a terminal agent
-speak-release-sent. Extend the ID lists rather than sniffing window titles.
+profile when `codeInDevApps` is on. `SendSuffix.strip` runs on the *raw* utterance before
+cleaning: a trailing "send" is removed and `TextInjector.pressReturn` fires a beat after the
+paste, in any app; "send" alone presses Enter and inserts nothing. `enterInTerminals` makes
+every terminal dictation send without the word, and is **off by default** — it fired
+mid-command and inside vim. The Ready card shows `focusTarget`, read by `MenuBarController`
+just before the panel opens, so the user sees where the words go and which vocabulary
+applies. Extend the ID lists rather than sniffing window titles.
 
 `MCPServer` (`Murmur mcp`) is newline-delimited JSON-RPC over stdio, protocol
 2024-11-05, tools only: `list_transcripts`, `read_transcript`, `search_transcripts`,

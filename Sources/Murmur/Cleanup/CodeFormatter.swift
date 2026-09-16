@@ -8,6 +8,21 @@ enum CleanupProfile: String {
     case prose, code
 }
 
+/// "…send" at the end of an utterance presses Enter after the paste, in any
+/// app. Stripped from the raw text before cleaning, so "send." from the model
+/// is handled too. "Send" on its own presses Enter and inserts nothing.
+enum SendSuffix {
+    static func strip(_ raw: String) -> (text: String, send: Bool) {
+        var tokens = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            .split(separator: " ", omittingEmptySubsequences: true).map(String.init)
+        guard let last = tokens.last else { return (raw, false) }
+        let bare = last.trimmingCharacters(in: CharacterSet(charactersIn: ",.?!;:")).lowercased()
+        guard bare == "send" else { return (raw, false) }
+        tokens.removeLast()
+        return (tokens.joined(separator: " "), true)
+    }
+}
+
 /// Spoken formatting for developers: identifier casing modes and a symbol
 /// vocabulary, as a rule pass so it stays instant and lossless.
 ///

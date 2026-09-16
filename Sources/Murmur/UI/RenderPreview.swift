@@ -120,7 +120,10 @@ enum RenderPreview {
                 state.hotKey = .default   // the bare binary's defaults persist between runs
                 // Vary the settings across cases so every control state is drawn.
                 if name == "active" { state.previewLaunchAtLogin(true) }
-                if name == "ready" { state.hotKey = .leftOption; state.meetingKey = .rightOption }
+                if name == "ready" {
+                    state.hotKey = .leftOption; state.meetingKey = .rightOption
+                    state.focusTarget = AppTarget(bundleID: "com.apple.Terminal", name: "Terminal", kind: .terminal)
+                }
                 if name == "ready" {
                     state.checkForUpdates = true
                     state.updateStatus = .checked(Date().addingTimeInterval(-7200))

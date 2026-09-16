@@ -156,10 +156,14 @@ final class DictationController {
         let target = self.target
         let profile: CleanupProfile = (state.codeInDevApps && target.kind != .other) ? .code : .prose
         do {
-            let (raw, elapsed) = try await transcriber.transcribe(samples)
+            let (rawText, elapsed) = try await transcriber.transcribe(samples)
+            let (raw, said) = SendSuffix.strip(rawText)
             let cleaned = RuleCleaner.clean(raw, profile: profile)
+            // "send" on its own: press Enter, insert nothing.
+            let send = said || (target.kind == .terminal && state.enterInTerminals)
 
             guard !cleaned.isEmpty, cleaned != "." else {
+                if said { TextInjector.pressReturn(after: 0) }
                 state.phase = .ready
                 return
             }
@@ -167,9 +171,7 @@ final class DictationController {
             var injected = true
             do {
                 try TextInjector.insert(cleaned)
-                if target.kind == .terminal, state.enterInTerminals {
-                    TextInjector.pressReturn(after: 0.12)
-                }
+                if send { TextInjector.pressReturn(after: 0.12) }
             } catch {
                 injected = false
                 state.phase = .failed(error.localizedDescription)

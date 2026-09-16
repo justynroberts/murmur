@@ -134,6 +134,21 @@ enum CleanerTest {
             }
         }
 
+        let sends: [(String, String, Bool)] = [
+            ("git status send", "git status", true),
+            ("hello there send.", "hello there", true),
+            ("Send", "", true),
+            ("send it to Dave", "send it to Dave", false),
+            ("please resend", "please resend", false),
+            ("git status", "git status", false),
+        ]
+        for (raw, text, send) in sends {
+            let r = SendSuffix.strip(raw)
+            let ok = r.text == text && r.send == send
+            if !ok { failures += 1 }
+            print("\(ok ? "PASS" : "FAIL")  send: \"\(raw)\" -> \"\(r.text)\" send=\(r.send)")
+        }
+
         let targets: [(String?, AppTarget.Kind)] = [
             ("com.apple.Terminal", .terminal), ("com.googlecode.iterm2", .terminal), ("com.mitchellh.ghostty", .terminal),
             ("com.microsoft.VSCode", .editor), ("com.todesktop.230313mzl4w4u92", .editor), ("com.jetbrains.intellij", .editor),
@@ -145,7 +160,7 @@ enum CleanerTest {
             print("\(ok ? "PASS" : "FAIL")  target: \(id ?? "nil") is \(kind)")
         }
 
-        let total = cases.count + dictionaryCases.count + codeCases.count + targets.count
+        let total = cases.count + dictionaryCases.count + codeCases.count + targets.count + sends.count
         print("\n\(total - failures)/\(total) passed")
         return failures == 0 ? 0 : 1
     }

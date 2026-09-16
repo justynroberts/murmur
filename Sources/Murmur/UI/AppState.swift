@@ -96,10 +96,14 @@ final class AppState: ObservableObject {
     @Published var codeInDevApps: Bool = UserDefaults.standard.object(forKey: "codeInDevApps") as? Bool ?? true {
         didSet { UserDefaults.standard.set(codeInDevApps, forKey: "codeInDevApps") }
     }
-    /// Press Enter after inserting into a terminal: speak, release, sent.
-    @Published var enterInTerminals: Bool = UserDefaults.standard.object(forKey: "enterInTerminals") as? Bool ?? true {
+    /// Always press Enter after inserting into a terminal. Off by default:
+    /// it would fire mid-command and inside vim. "…send" works regardless.
+    @Published var enterInTerminals: Bool = UserDefaults.standard.object(forKey: "enterInTerminals") as? Bool ?? false {
         didSet { UserDefaults.standard.set(enterInTerminals, forKey: "enterInTerminals") }
     }
+
+    /// The app that will receive the next dictation, for the Ready card.
+    @Published var focusTarget: AppTarget?
 
     // MARK: Meeting mode — see MeetingRecorder.
 

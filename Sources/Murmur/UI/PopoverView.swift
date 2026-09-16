@@ -159,6 +159,9 @@ struct PopoverView: View {
                     keycap(state.hotKey.symbol)
                     label("Hold \(state.hotKey.name), speak, release.", Tokens.text2(scheme), size: 11)
                 }
+                if let target = state.focusTarget {
+                    label(targetHint(target), Tokens.text3(scheme), size: 10)
+                }
 
             case .recording(let seconds):
                 HStack(spacing: 7) {
@@ -229,6 +232,22 @@ struct PopoverView: View {
             }
         }
         .padding(.vertical, 2)
+    }
+
+    /// "Words go to Terminal · code vocabulary · Enter on release". Read when
+    /// the panel opens; the app behind it is where the next paste lands.
+    private func targetHint(_ t: AppTarget) -> String {
+        var parts = ["Words go to \(t.name ?? "the front app")"]
+        switch t.kind {
+        case .terminal:
+            parts.append(state.codeInDevApps ? "code vocabulary" : "prose")
+            parts.append(state.enterInTerminals ? "Enter on release" : "say \"send\" to press Enter")
+        case .editor:
+            parts.append(state.codeInDevApps ? "code vocabulary" : "prose")
+        case .other:
+            parts.append("prose")
+        }
+        return parts.joined(separator: " · ")
     }
 
     /// Changing this forces the blur-in transition when the state changes kind,

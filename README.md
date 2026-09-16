@@ -168,9 +168,12 @@ capital letter or a full stop, so "git checkout dash b camel case feature branch
 
 ### Speak to your agent
 
-In a terminal, Murmur presses Enter after inserting, so talking to Claude Code, Codex or
-any terminal agent is speak, release, sent. Both of these are switches under Developers
-in Settings. Terminals it knows: Terminal, iTerm2, Warp, Ghostty, Alacritty, kitty,
+End any phrase with **"send"** and Murmur presses Enter after inserting, in any app, so
+talking to Claude Code, Codex or any terminal agent is "fix the failing test, send". "Send"
+on its own just presses Enter. If you would rather every terminal dictation were sent
+without the word, there is a switch for that under Developers in Settings; it is off by
+default because it would fire mid-command and inside vim. The Ready card in the panel says
+where the next words are going and which vocabulary applies. Terminals it knows: Terminal, iTerm2, Warp, Ghostty, Alacritty, kitty,
 WezTerm, Hyper. Editors: Xcode, VS Code, Cursor, Windsurf, Zed, Sublime, JetBrains, Nova,
 BBEdit, MacVim, Neovide.
 
@@ -208,7 +211,7 @@ The **gear icon** in the panel, or Settings from the right-click menu.
 | Transcripts | Where meeting files go. Open it, or change it. |
 | Launch at login | Keeps Murmur in the menu bar after a restart. |
 | Code vocabulary in terminals and editors | Symbols, no capitals, no full stops when the text is going to a terminal or editor. On by default. |
-| Press Enter after inserting in a terminal | Speak, release, sent. On by default. |
+| Always press Enter after inserting in a terminal | Off by default; "…send" presses Enter regardless, anywhere. |
 | Check for updates | **Off by default.** When on, asks GitHub for the latest version number once a day and sends nothing else. |
 
 Fn/Globe is not offered as a key because a bare press fires the emoji picker or Apple's

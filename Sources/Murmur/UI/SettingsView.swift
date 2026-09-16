@@ -107,11 +107,11 @@ struct SettingsView: View {
                     pillSwitch(isOn: $state.codeInDevApps, label: "Code vocabulary in terminals and editors")
                 }
                 HStack {
-                    label("Press Enter after inserting in a terminal", Tokens.text3(scheme), size: 10.5)
+                    label("Always press Enter after inserting in a terminal", Tokens.text3(scheme), size: 10.5)
                     Spacer()
-                    pillSwitch(isOn: $state.enterInTerminals, label: "Press Enter after inserting in a terminal")
+                    pillSwitch(isOn: $state.enterInTerminals, label: "Always press Enter after inserting in a terminal")
                 }
-                label("Say \"camel case user session token\" anywhere for userSessionToken. In a terminal or editor, \"open paren\", \"arrow\", \"double equals\" and friends become symbols, and nothing gets a capital or a full stop.",
+                label("End any phrase with \"send\" to press Enter, in any app. Say \"camel case user session token\" anywhere for userSessionToken. In a terminal or editor, \"open paren\", \"arrow\", \"double equals\" and friends become symbols, and nothing gets a capital or a full stop.",
                       Tokens.text3(scheme), size: 9.5)
             }
 

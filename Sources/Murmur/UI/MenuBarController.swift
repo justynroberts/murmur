@@ -124,6 +124,8 @@ final class MenuBarController {
         if popover.isShown {
             popover.performClose(nil)
         } else {
+            // Read before showing: the app behind the panel is the target.
+            state.focusTarget = AppTarget.frontmost()
             popover.contentSize = fittingSize()
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popover.contentViewController?.view.window?.makeKey()
