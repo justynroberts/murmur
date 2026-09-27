@@ -93,6 +93,18 @@ enum CleanerTest {
         ("git checkout dash b camel case feature branch", .code, "git checkout -b featureBranch", "flag then identifier"),
         ("git status", .code, "git status", "plain command untouched: no capital, no stop"),
         ("please fix the failing test and rerun it", .code, "please fix the failing test and rerun it", "prose in the code profile stays intact"),
+        ("spell k u b e c t l", .prose, "kubectl", "spell single letters"),
+        ("spell kay you bee ee", .prose, "kube", "spell letter names"),
+        ("spell capital m u r m u r", .prose, "Murmur", "spell with a capital"),
+        ("spell m y dash a p p, then run it", .prose, "my-app, then run it.", "spell closes at a comma"),
+        ("use spell k u b e end for the client", .prose, "Use kube for the client.", "'end' closes a spelling"),
+        ("number one dot two dot three", .prose, "1.2.3", "version number"),
+        ("number twenty five", .prose, "25", "compound number"),
+        ("number two thousand and four", .prose, "2004", "thousands with 'and'"),
+        ("set the port to number eight thousand eighty, please", .prose, "Set the port to 8080, please.", "number inside a sentence"),
+        ("digits four two", .code, "42", "digits: one digit per word"),
+        ("digits zero seven one one", .prose, "0711", "digits keep leading zeros"),
+        ("the number of retries is high", .prose, "The number of retries is high.", "'number' without number words is prose"),
         ("the case for this is strong", .prose, "The case for this is strong.", "'case' without a mode word is prose"),
         ("in this case, camel case my var", .prose, "In this case, myVar", "'this case' is not a mode; the real one still works"),
     ]
@@ -134,6 +146,18 @@ enum CleanerTest {
             }
         }
 
+        let macros = UserMacros(entries: ["sign off": "Thanks,\nJustyn", "Standup!": "Yesterday: {date}"])
+        let macroCases: [(String, String?)] = [
+            ("Sign off.", "Thanks,\nJustyn"), ("sign off", "Thanks,\nJustyn"), ("stand up", nil),
+            ("please sign off", nil), ("Standup", "Yesterday: 2026-01-02"),
+        ]
+        for (say, want) in macroCases {
+            let got = macros.expand(say, now: Date(timeIntervalSince1970: 1_767_312_000))
+            let ok = got == want
+            if !ok { failures += 1 }
+            print("\(ok ? "PASS" : "FAIL")  macro: \"\(say)\" -> \(got.map { "\"\($0)\"" } ?? "nil")")
+        }
+
         let sends: [(String, String, Bool)] = [
             ("git status send", "git status", true),
             ("hello there send.", "hello there", true),
@@ -160,7 +184,7 @@ enum CleanerTest {
             print("\(ok ? "PASS" : "FAIL")  target: \(id ?? "nil") is \(kind)")
         }
 
-        let total = cases.count + dictionaryCases.count + codeCases.count + targets.count + sends.count
+        let total = cases.count + dictionaryCases.count + codeCases.count + targets.count + sends.count + macroCases.count
         print("\n\(total - failures)/\(total) passed")
         return failures == 0 ? 0 : 1
     }

@@ -50,6 +50,20 @@ enum TextInjector {
         pb.writeObjects(items)
     }
 
+    /// Backspace `count` times: how "scratch that" removes the last insertion.
+    /// Key events rather than selection, so it works in terminals and chat boxes.
+    static func deleteBackward(count: Int) {
+        guard count > 0 else { return }
+        let source = CGEventSource(stateID: .combinedSessionState)
+        let delete: CGKeyCode = 0x33
+        for _ in 0..<count {
+            guard let down = CGEvent(keyboardEventSource: source, virtualKey: delete, keyDown: true),
+                  let up = CGEvent(keyboardEventSource: source, virtualKey: delete, keyDown: false) else { return }
+            down.post(tap: .cghidEventTap)
+            up.post(tap: .cghidEventTap)
+        }
+    }
+
     /// Enter, a beat after the paste so the target has read the pasteboard.
     static func pressReturn(after delay: TimeInterval) {
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {

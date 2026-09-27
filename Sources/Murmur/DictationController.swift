@@ -20,6 +20,8 @@ final class DictationController {
     private var tick: Timer?
     /// The app that had focus when the key went down; the paste goes there.
     private var target = AppTarget(bundleID: nil, name: nil, kind: .other)
+    /// What the last dictation inserted, so "scratch that" can take it back.
+    private var lastInsertion: (text: String, bundleID: String?, sent: Bool)?
     private var cancellables = Set<AnyCancellable>()
 
     /// Audio captured before the models finished loading. Held rather than dropped,
@@ -158,7 +160,21 @@ final class DictationController {
         do {
             let (rawText, elapsed) = try await transcriber.transcribe(samples)
             let (raw, said) = SendSuffix.strip(rawText)
-            let cleaned = RuleCleaner.clean(raw, profile: profile)
+
+            // "scratch that": delete what the last dictation put in, if it is
+            // still where we put it (same app, not already sent with Enter).
+            if UserMacros.key(raw) == "scratch that" {
+                if let last = lastInsertion, !last.sent, last.bundleID == target.bundleID {
+                    TextInjector.deleteBackward(count: last.text.count)
+                    lastInsertion = nil
+                    state.record(Dictation(text: "Scratched: \(last.text.prefix(60))", spoken: spoken, latency: elapsed, injected: true))
+                }
+                state.phase = .ready
+                return
+            }
+
+            // A macro phrase on its own expands to its text; otherwise clean as usual.
+            let cleaned = UserMacros.shared.expand(raw) ?? RuleCleaner.clean(raw, profile: profile)
             // "send" on its own: press Enter, insert nothing.
             let send = said || (target.kind == .terminal && state.enterInTerminals)
 
@@ -172,6 +188,7 @@ final class DictationController {
             do {
                 try TextInjector.insert(cleaned)
                 if send { TextInjector.pressReturn(after: 0.12) }
+                lastInsertion = (cleaned, target.bundleID, send)
             } catch {
                 injected = false
                 state.phase = .failed(error.localizedDescription)

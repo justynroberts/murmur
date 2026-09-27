@@ -111,7 +111,19 @@ struct SettingsView: View {
                     Spacer()
                     pillSwitch(isOn: $state.enterInTerminals, label: "Always press Enter after inserting in a terminal")
                 }
-                label("End any phrase with \"send\" to press Enter, in any app. Say \"camel case user session token\" anywhere for userSessionToken. In a terminal or editor, \"open paren\", \"arrow\", \"double equals\" and friends become symbols, and nothing gets a capital or a full stop.",
+                HStack {
+                    label("Macros — say a phrase, insert its text", Tokens.text3(scheme), size: 10.5)
+                    Spacer()
+                    Button("Edit macros.json") {
+                        _ = UserMacros.shared.count
+                        if !NSWorkspace.shared.open(UserMacros.defaultFileURL) {
+                            NSWorkspace.shared.activateFileViewerSelecting([UserMacros.defaultFileURL])
+                        }
+                    }
+                    .buttonStyle(.plain).font(Fonts.display(10.5, .medium)).foregroundStyle(Tokens.accent(scheme))
+                    .onHover { $0 ? NSCursor.pointingHand.push() : NSCursor.pop() }
+                }
+                label("Say \"scratch that\" to delete what the last dictation inserted. End any phrase with \"send\" to press Enter, in any app. Say \"camel case user session token\" anywhere for userSessionToken. In a terminal or editor, \"open paren\", \"arrow\", \"double equals\" and friends become symbols, and nothing gets a capital or a full stop.",
                       Tokens.text3(scheme), size: 9.5)
             }
 

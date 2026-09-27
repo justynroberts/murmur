@@ -255,6 +255,16 @@ there is no sentence capital and no trailing stop: `git status.` is not a comman
 utterance ending in an identifier gets no stop in either profile. Every rule has a
 cleantest case; add one for every phrase you add.
 
+Spell and number modes live beside the casing modes in `CodeFormatter`: `spell` maps single
+letters and letter names ("kay", "you", "zed"), digits and dash/underscore/dot, with
+`capital` before a letter; `number` composes number words ("two thousand and four" → 2004)
+with `dot`/`point` between groups, and `digits` takes one digit per word so leading zeros
+survive. "scratch that" is matched on the raw utterance in `DictationController` and
+backspaces the length of the last insertion, only if it went to the same app and was not
+sent with Enter. `UserMacros` mirrors `UserDictionary`: `macros.json`, seeded, re-read on
+mtime; an utterance equal to a phrase (case and punctuation ignored) is replaced by its
+text before cleaning, with `{date}`/`{time}` filled.
+
 `AppTarget.frontmost()` is read when the key goes *down* — the paste lands in the app
 that had focus then. Terminals and editors (bundle ID lists in `AppTarget`) get the code
 profile when `codeInDevApps` is on. `SendSuffix.strip` runs on the *raw* utterance before

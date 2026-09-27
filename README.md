@@ -151,8 +151,19 @@ Say a casing mode and the words, anywhere:
 | dot case config server port | `config.server.port` |
 | slash path usr local bin | `usr/local/bin` |
 
-An identifier runs until you pause (the model puts a comma there), say "end", or stop
-talking. "Rename it to camel case user session token, then save" comes out as
+Two more modes for the things speech gets wrong: **spell** and **number**.
+
+| You say | You get |
+|---|---|
+| spell k u b e c t l | `kubectl` |
+| spell capital m u r m u r | `Murmur` |
+| number one dot two dot three | `1.2.3` |
+| number two thousand and four | `2004` |
+| digits zero seven one one | `0711` |
+
+Letter names work too ("kay you bee ee" is `kube`), and so do dash, underscore and dot
+inside a spelling. A mode runs until you pause (the model puts a comma there), say "end",
+or stop talking. "Rename it to camel case user session token, then save" comes out as
 "Rename it to userSessionToken, then save."
 
 ### Speak symbols
@@ -165,6 +176,24 @@ Brackets and dots glue to their neighbours, operators get spaces, and nothing ge
 capital letter or a full stop, so "git checkout dash b camel case feature branch" is
 `git checkout -b featureBranch` and "foo open paren bar comma baz close paren" is
 `foo(bar, baz)`. In Slack or mail the same words stay words.
+
+### Take it back
+
+Say **"scratch that"** and Murmur deletes what the last dictation inserted, as long as you
+are still in the same app and it was not already sent with Enter.
+
+### Macros
+
+Say a phrase on its own and its text goes in instead: a signature, a standup template, a
+commit message skeleton. They live in `~/Library/Application Support/Murmur/macros.json`,
+opened from Settings under Developers, and `{date}` and `{time}` are filled in:
+
+```json
+{
+  "sign off": "Thanks,\nJustyn",
+  "standup": "Yesterday: \nToday: \nBlocked: "
+}
+```
 
 ### Speak to your agent
 
