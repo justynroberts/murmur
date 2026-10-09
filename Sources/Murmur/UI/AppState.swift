@@ -105,6 +105,19 @@ final class AppState: ObservableObject {
     /// The app that will receive the next dictation, for the Ready card.
     @Published var focusTarget: AppTarget?
 
+    /// The floating panel, for Macs whose menu bar has no room for the icon.
+    var requestPanelToggle: (() -> Void)?
+
+    /// A Dock icon that opens the panel when clicked. Off by default; the app
+    /// is a menu bar app. On a notched MacBook with a full menu bar it is the
+    /// most discoverable way in.
+    @Published var showInDock: Bool = UserDefaults.standard.bool(forKey: "showInDock") {
+        didSet {
+            UserDefaults.standard.set(showInDock, forKey: "showInDock")
+            NSApp.setActivationPolicy(showInDock ? .regular : .accessory)
+        }
+    }
+
     // MARK: Meeting mode — see MeetingRecorder.
 
     /// Tapped to start and stop meeting mode. Must differ from `hotKey`.

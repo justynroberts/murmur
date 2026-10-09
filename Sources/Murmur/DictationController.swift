@@ -74,8 +74,11 @@ final class DictationController {
             self.endRecording()
         }
         hotKey.onTap = { [weak self] key in
-            guard let self, key == self.state.meetingKey else { return }
-            self.meeting.toggle()
+            guard let self else { return }
+            if key == self.state.meetingKey { self.meeting.toggle() }
+            // A tap of the hold-to-dictate key (too short to record) opens the
+            // panel — the way in when the menu bar has no room for the icon.
+            else if key == self.state.hotKey { self.state.requestPanelToggle?() }
         }
         do {
             try hotKey.start()

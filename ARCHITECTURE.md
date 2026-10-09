@@ -177,6 +177,14 @@ and puts the middle in a `ScrollView` only once its measured height exceeds what
 nothing is ever clipped by a stale size. `Murmur meeting debug-fill-panel` fills the recent
 list with long entries and opens the panel for an on-screen check.
 
+**The panel does not need the icon.** On a notched MacBook with a full menu bar macOS drops
+status items silently, so `PanelWindowController` hosts the same `PopoverView` in a floating,
+non-activating `NSPanel` centred under the menu bar. A *tap* of the hold-to-dictate key
+(too short to record, so it was free) toggles it; `showInDock` switches the activation
+policy to regular so a Dock icon exists and `applicationShouldHandleReopen` opens the panel;
+`Murmur meeting panel` toggles it from a script. The panel closes on Escape and when it
+loses key status. `KeyablePanel` overrides `canBecomeKey`, or the buttons would be dead.
+
 **Setup is a real window** (`SetupWindowController`, `SetupView`), shown on launch until
 it has completed once (`hasCompletedSetup`) and again whenever Accessibility has been taken
 away. It does not depend on the status item: on a notched MacBook with a full menu bar the

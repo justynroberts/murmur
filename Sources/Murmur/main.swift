@@ -69,7 +69,7 @@ if CommandLine.arguments.count > 1, CommandLine.arguments[1] == "meetingtest" {
 /// distributed notification. Scriptable from Shortcuts or a calendar hook.
 if CommandLine.arguments.count > 2, CommandLine.arguments[1] == "meeting" {
     let action = CommandLine.arguments[2]
-    guard ["start", "stop", "toggle", "debug-fill-panel", "debug-open-settings", "debug-open-transcripts"].contains(action) else {
+    guard ["start", "stop", "toggle", "panel", "debug-fill-panel", "debug-open-settings", "debug-open-transcripts"].contains(action) else {
         print("usage: Murmur meeting start|stop|toggle"); exit(2)
     }
     DistributedNotificationCenter.default().postNotificationName(
@@ -184,7 +184,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var setup: SetupWindowController?
     private var settings: SettingsWindowController?
     private var transcripts: TranscriptsWindowController?
+    private var panel: PanelWindowController?
     private let state = AppState()
+
+    /// Clicking the Dock icon (when it is shown) opens the panel.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        panel?.show()
+        return false
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Fonts.register()
@@ -206,6 +213,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let settings = SettingsWindowController(state: state)
         self.settings = settings
         state.requestSettingsWindow = { [weak settings] in settings?.show() }
+        let panel = PanelWindowController(state: state)
+        self.panel = panel
+        state.requestPanelToggle = { [weak panel] in panel?.toggle() }
+        if state.showInDock { NSApp.setActivationPolicy(.regular) }
         let transcripts = TranscriptsWindowController(state: state)
         self.transcripts = transcripts
         state.requestTranscriptsWindow = { [weak transcripts] url in transcripts?.show(selecting: url) }
@@ -243,6 +254,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 case "debug-fill-panel": self?.menuBar?.debugFillAndPresent()
                 case "debug-open-transcripts":
                     self?.transcripts?.show()
+                case "panel":
+                    self?.panel?.toggle()
                 case "debug-open-settings":
                     self?.settings?.show()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {

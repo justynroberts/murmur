@@ -125,7 +125,7 @@ struct SetupView: View {
                         Text("Tap \(state.meetingKey.name) to record a meeting to a file.")
                             .font(Fonts.display(12)).foregroundStyle(Tokens.text2(scheme))
                     }
-                    Text("Murmur lives in the menu bar. If you cannot see its icon, your menu bar is full; quit another menu bar app to make room.")
+                    Text("Murmur lives in the menu bar. If your menu bar is full and the icon is hidden, tap \(state.hotKey.name) on its own to open the panel, or turn on Show in the Dock in Settings.")
                         .font(Fonts.display(10.5)).foregroundStyle(Tokens.text3(scheme))
                         .fixedSize(horizontal: false, vertical: true)
                 }

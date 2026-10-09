@@ -55,6 +55,12 @@ and add it back. See [Troubleshooting](docs/TROUBLESHOOTING.md) for the rest.
   <img src="docs/screenshots/menubar-menu.png" width="332" alt="Right-click menu: Open Transcripts, Start Meeting, Settings, Quit">
 </p>
 
+**If you cannot see the icon**, your menu bar is full and macOS has hidden it behind the
+notch. You do not need it: **tap the dictation key on its own** (Left Option by default)
+and the panel opens as a floating window under the menu bar; tap again or press Escape to
+close it. Or turn on **Show in the Dock** in Settings and click the Dock icon. From a
+script, `/Applications/Murmur.app/Contents/MacOS/Murmur meeting panel` toggles it.
+
 The icon tells you what is happening without opening anything: plain when ready, a coral
 waveform while you hold the key, a record glyph the whole time a meeting is on, and dimmed
 or badged while setting up or if something is wrong.
@@ -238,6 +244,7 @@ The **gear icon** in the panel, or Settings from the right-click menu.
 | Hold to dictate | Which modifier to hold. Left Option by default. |
 | Tap for meeting mode | Which modifier to tap. Right Option by default. The two can never be the same key. |
 | Transcripts | Where meeting files go. Open it, or change it. |
+| Show in the Dock | A Dock icon that opens the panel when clicked, for a menu bar with no room. Off by default. |
 | Launch at login | Keeps Murmur in the menu bar after a restart. |
 | Code vocabulary in terminals and editors | Symbols, no capitals, no full stops when the text is going to a terminal or editor. On by default. |
 | Always press Enter after inserting in a terminal | Off by default; "…send" presses Enter regardless, anywhere. |

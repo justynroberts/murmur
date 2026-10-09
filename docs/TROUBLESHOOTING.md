@@ -1,5 +1,12 @@
 # Troubleshooting
 
+## I cannot see the menu bar icon
+
+Your menu bar is full and macOS has hidden the icon behind the notch; it does not scroll.
+Tap the dictation key on its own (Left Option by default) and the panel opens as a floating
+window under the menu bar. Or turn on Show in the Dock in Settings. Quitting another menu
+bar app also brings the icon back.
+
 ## Nothing happens when I hold the key
 
 First check which key it is: the panel shows it under Ready, and Settings (the gear in

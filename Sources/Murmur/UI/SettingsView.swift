@@ -132,6 +132,16 @@ struct SettingsView: View {
                     .transition(.blurIn)
             }
 
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    label("Show in the Dock", Tokens.text2(scheme), size: 11.5)
+                    Spacer()
+                    pillSwitch(isOn: $state.showInDock, label: "Show in the Dock")
+                }
+                label("For a menu bar with no room for the icon: click the Dock icon, or tap \(state.hotKey.name) on its own, to open this panel.",
+                      Tokens.text3(scheme), size: 9.5)
+            }
+
             HStack {
                 label("Launch at login", Tokens.text2(scheme), size: 11.5)
                 Spacer()
